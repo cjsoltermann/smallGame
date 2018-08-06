@@ -124,10 +124,10 @@ void drawMap(char* map) {
 chtype calculateWall(char *map, int i) {
   char surround[9];
   getSurround(i, map, surround);
-  int t = tiles[surround[1]].at == 1;
-  int l = tiles[surround[3]].at == 1;
-  int r = tiles[surround[5]].at == 1;
-  int b = tiles[surround[7]].at == 1;
+  int t = tiles[surround[1]].c == '#';
+  int l = tiles[surround[3]].c == '#';
+  int r = tiles[surround[5]].c == '#';
+  int b = tiles[surround[7]].c == '#';
 /*
   if(t && b && l && r) return ACS_PLUS;
   if(t && r && b) return ACS_LTEE;
