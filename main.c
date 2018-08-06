@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define LENGTH(X) (sizeof X / sizeof X[0])
 #define XYTOINDEX(X, Y) ((Y) * 20 + (X))
 #define INDEXTOX(I) (I % 20)
 #define INDEXTOY(I) (I / 20)
@@ -21,14 +22,46 @@ struct ent {
   uint8_t at;
 };
 
+union arg {
+  int i;
+  void *v;
+};
+
+struct key {
+  short code;
+  uint8_t mask;
+  void (*func)(const union arg*);
+  const union arg arg;
+};
+
 enum tiles { FLOOR, WALL };
+enum states {
+  GAME = 1 << 7,
+};
+
+void getSurround(int i, char *map, char *surround);
+chtype calculateWall(char *map, int i);
+void drawMap(char* map);
+unsigned int createEnt(chtype c, int x, int y, uint8_t at);
+void deleteEnt(unsigned int i);
+void drawEnts();
+void processKeys(short code);
+void setup();
+int main();
+void quit(const union arg *arg);
 
 struct tile tiles[] = {
   {' ', 0 },
-  {'#', 1 },
+  {'#', 0 },
 };
 
 struct ent *ents[400];
+
+struct key keys[] = {
+  { 'q', GAME, quit, { 0 } },
+};
+
+uint8_t state = GAME;
 
 char map[400] = {
   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -52,15 +85,6 @@ char map[400] = {
   0,0,0,0,0,0,1,1,1,0,0,0,1,0,0,0,0,0,0,0,
   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, };
 
-void getSurround(int i, char *map, char *surround);
-chtype calculateWall(char *map, int i);
-void drawMap(char* map);
-unsigned int createEnt(chtype c, int x, int y, uint8_t at);
-void deleteEnt(unsigned int i);
-void drawEnts();
-void setup();
-void main();
-
 void setup() {
   setlocale(LC_ALL, "en_US.UTF-8");
   if(!initscr()) exit(1);
@@ -70,23 +94,28 @@ void setup() {
   keypad(stdscr, TRUE);
 }
 
+void quit(const union arg *arg) {
+  endwin();
+  exit(0);
+}
+
 int main() {
   setup();
   unsigned int player = createEnt('d', 7, 7, 0);
-  drawMap(map);
-  drawEnts();
-  getch();
+  while(1) {
+    drawMap(map);
+    drawEnts();
+    processKeys(getch());
+  }
   endwin();
 }
 
 void drawMap(char* map) {
   int i;
-  struct tile tile;
   chtype c;
   for(i = 0; i < 400; i++) {
-    tile = tiles[map[i]];
-    c = tile.c;
-    if(tile.at == 1)
+    c = tiles[map[i]].c;
+    if(c == '#')
       c = calculateWall(map, i);
     mvaddch(INDEXTOY(i), INDEXTOX(i), c);
   }
@@ -179,4 +208,11 @@ unsigned int createEnt(chtype c, int x, int y, uint8_t at) {
 
 void deleteEnt(unsigned int i) {
   free(ents[i]);
+}
+
+void processKeys(short code){
+  int i;
+  for(i = 0; i < LENGTH(keys); i++) {
+    if(keys[i].code == code) keys[i].func(&keys[i].arg);
+  }
 }
