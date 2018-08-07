@@ -17,6 +17,7 @@
 #define BITSET(B, I) ((B >> 7 - I) & 1)
 #define SETBIT(B, I) (B |= (1 << 7 - I))
 #define ISVALID(X, Y) (X < MAPWIDTH && X >= 0 && Y < MAPHEIGHT && Y >= 0)
+#define ISSOLID(X, Y) (tiles[map[XYTOINDEX(X, Y)]].at == 1)
 
 struct point {
   int x;
@@ -67,6 +68,7 @@ void deleteEnt(unsigned int i);
 void drawEnts();
 void moveEnt(unsigned int i, unsigned int x, unsigned int y);
 #define shiftEnt(I, X, Y) moveEnt(I, ents[I]->loc.x + (X), ents[I]->loc.y + (Y))
+unsigned int entAt(unsigned int x, unsigned int y);
 void processKeys(short code);
 void drawStatus();
 void clearStatus();
@@ -79,7 +81,7 @@ void shiftCamera(const union arg *arg);
 
 struct tile tiles[] = {
   {' ', 0 },
-  {'#', 0 },
+  {'#', 1 },
 };
 
 struct ent *ents[MAXENTS];
@@ -298,10 +300,18 @@ void deleteEnt(unsigned int i) {
 }
 
 void moveEnt(unsigned int i, unsigned int x, unsigned int y) {
-  if(ISVALID(x, y)) {
+  if(ISVALID(x, y) && entAt(x, y) == -1 && !ISSOLID(x, y)) {
     ents[i]->loc.x = x;
     ents[i]->loc.y = y;
   }
+}
+
+unsigned int entAt(unsigned int x, unsigned int y) {
+  int i;
+  for(i = 0; i < MAXENTS; i++) {
+    if(ents[i] && ents[i]->loc.x == x && ents[i]->loc.y == y) return i;
+  }
+  return -1;
 }
 
 void processKeys(short code){
