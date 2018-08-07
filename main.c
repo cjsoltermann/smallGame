@@ -59,6 +59,7 @@ enum states {
 void getSurround(int i, char *map, char *surround);
 chtype calculateWall(char *map, int i);
 void drawMap(char* map);
+void loadMap(char* file);
 unsigned int createEnt(chtype c, int x, int y, uint8_t at);
 void deleteEnt(unsigned int i);
 void drawEnts();
@@ -165,6 +166,22 @@ void drawMap(char* map) {
     if(c == '#')
       c = calculateWall(map, i);
     mvaddch(INDEXTOY(i) + camera.y, INDEXTOX(i) + camera.x, c);
+  }
+}
+
+void loadMap(char *file) {
+  int i, c;
+  FILE *f = fopen(file, "r");
+  if(f) {
+    setStatus("Error loading map %s", file);
+    return;
+  }
+  for(i = 0; i < MAPAREA; i++) {
+    c = fgetc(f);
+    if(c != EOF) {
+      map[i] = (char)c;
+    }
+    else break;
   }
 }
 
