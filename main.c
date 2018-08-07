@@ -150,7 +150,7 @@ void shiftCamera(const union arg *arg) {
 
 void dogThink(unsigned int ent) {
   srand(clock());
-  shiftEnt(ent, rand() % 2 * 2 -1, rand() % 2 * 2 - 1);
+  shiftEnt(ent, rand() % 3 - 1, rand() % 3 - 1);
 }
 
 void updateEnts() {
@@ -165,6 +165,7 @@ int main() {
   unsigned int player = createEnt('@', 7, 7, 0);
   unsigned int dog = createEnt('d', 8, 8, 0);
   ents[dog]->think = dogThink;
+  loadMap("map1.map");
   while(1) {
     drawMap(map);
     drawEnts();
@@ -189,7 +190,7 @@ void drawMap(char* map) {
 void loadMap(char *file) {
   int i, c;
   FILE *f = fopen(file, "r");
-  if(f) {
+  if(!f) {
     setStatus("Error loading map %s", file);
     return;
   }
