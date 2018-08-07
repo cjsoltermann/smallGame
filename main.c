@@ -215,21 +215,7 @@ chtype calculateWall(char *map, int i) {
   int l = tiles[surround[3]].at & CONNECT;
   int r = tiles[surround[5]].at & CONNECT;
   int b = tiles[surround[7]].at & CONNECT;
-/*
-  if(t && b && l && r) return ACS_PLUS;
-  if(t && r && b) return ACS_LTEE;
-  if(t && l && b) return ACS_RTEE;
-  if(t && l && r) return ACS_BTEE;
-  if(b && l && r) return ACS_TTEE;
-  if(t && r) return ACS_LLCORNER;
-  if(t && l) return ACS_LRCORNER;
-  if(b && r) return ACS_ULCORNER;
-  if(b && l) return ACS_URCORNER;
-  if(l) return ACS_HLINE;
-  if(r) return ACS_HLINE;
-  if(t) return ACS_VLINE;
-  if(b) return ACS_VLINE;
-*/
+  
   if(t) {
     if(b) {
       if(l) {
