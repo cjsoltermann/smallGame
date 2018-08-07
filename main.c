@@ -15,6 +15,7 @@
 #define INDEXTOY(I) (I / MAPWIDTH)
 #define BITSET(B, I) ((B >> 7 - I) & 1)
 #define SETBIT(B, I) (B |= (1 << 7 - I))
+#define ISVALID(X, Y) (X < MAPWIDTH && X >= 0 && Y < MAPHEIGHT && Y >= 0)
 
 struct point {
   int x;
@@ -65,12 +66,12 @@ void moveEnt(unsigned int i, unsigned int x, unsigned int y);
 #define shiftEnt(I, X, Y) moveEnt(I, ents[I]->loc.x + X, ents[I]->loc.y + Y)
 void processKeys(short code);
 void drawStatus();
-void setStatus(char *s);
-void setfStatus(char *s, ...);
+void clearStatus();
+void setStatus(char *s, ...);
 void setup();
 int main();
 void quit(const union arg *arg);
-void movePlayer(const union arg *arg);
+void shiftPlayer(const union arg *arg);
 
 struct tile tiles[] = {
   {' ', 0 },
@@ -81,10 +82,10 @@ struct ent *ents[MAXENTS];
 
 struct key keys[] = {
   { 'q', GAME, quit, { 0 } },
-  { 'w', GAME, movePlayer, { .i = UP } },
-  { 's', GAME, movePlayer, { .i = DOWN } },
-  { 'a', GAME, movePlayer, { .i = LEFT } },
-  { 'd', GAME, movePlayer, { .i = RIGHT } },
+  { 'w', GAME, shiftPlayer, { .p = {0,-1} } },
+  { 's', GAME, shiftPlayer, { .p = {0,1} } },
+  { 'a', GAME, shiftPlayer, { .p = {-1,0} } },
+  { 'd', GAME, shiftPlayer, { .p = {1,0} } },
 };
 
 uint8_t state = GAME;
@@ -127,23 +128,9 @@ void quit(const union arg *arg) {
   exit(0);
 }
 
-void movePlayer(const union arg *arg) {
-  int d = arg->i;
-  setfStatus("Arg was %d!", d);
-  switch(arg->i) {
-    case UP:
-      shiftEnt(0, 0, -1);
-      break;
-    case DOWN:
-      shiftEnt(0, 0, 1);
-      break;
-    case LEFT:
-      shiftEnt(0, -1, 0);
-      break;
-    case RIGHT:
-      shiftEnt(0, 1, 0);
-      break;
-  }
+void shiftPlayer(const union arg *arg) {
+  struct point p = arg->p;
+  shiftEnt(0, p.x, p.y);
 }
 
 int main() {
@@ -264,8 +251,10 @@ void deleteEnt(unsigned int i) {
 }
 
 void moveEnt(unsigned int i, unsigned int x, unsigned int y) {
-  ents[i]->loc.x = x;
-  ents[i]->loc.y = y;
+  if(ISVALID(x, y)) {
+    ents[i]->loc.x = x;
+    ents[i]->loc.y = y;
+  }
 }
 
 void processKeys(short code){
@@ -279,20 +268,19 @@ void drawStatus() {
   mvaddstr(getmaxy(stdscr) - 1, 0, status); 
 }
 
-void setStatus(char *s) {
+void clearStatus() {
   int i;
-  for(i = 0; i < 20; i++) {
-    if(s[i] == '\0') break;
-    status[i] = s[i];
+  for(i = 0; i < 50; i++) {
+    status[i] = ' ';
   }
-  status[i + 1] = '\0';
 }
 
-void setfStatus(char *s, ...) {
+void setStatus(char *s, ...) {
+  clearStatus();
   va_list args;
   va_start(args, s);
 
-  vsnprintf(status, 20, s, args);
+  vsnprintf(status, 50, s, args);
 
   va_end(args);
 }
