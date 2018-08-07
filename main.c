@@ -168,6 +168,7 @@ int main() {
   while(1) {
     drawMap(map);
     drawEnts();
+    drawStatus();
     updateEnts();
     processKeys(getch());
   }
