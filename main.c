@@ -17,7 +17,7 @@
 #define BITSET(B, I) ((B >> 7 - I) & 1)
 #define SETBIT(B, I) (B |= (1 << 7 - I))
 #define ISVALID(X, Y) (X < MAPWIDTH && X >= 0 && Y < MAPHEIGHT && Y >= 0)
-#define ISSOLID(X, Y) (tiles[map[XYTOINDEX(X, Y)]].at == 1)
+#define ISSOLID(X, Y) (tiles[map[XYTOINDEX(X, Y)]].at & SOLID)
 
 struct point {
   int x;
@@ -54,9 +54,13 @@ struct key {
 enum tiles { FLOOR, WALL };
 enum directions { UP, DOWN, LEFT, RIGHT };
 enum states {
-  GAME =   1 << 7,
-  CURSOR = 1 << 6,
-  EDIT =   1 << 5,
+  GAME =    1 << 7,
+  CURSOR =  1 << 6,
+  EDIT =    1 << 5,
+};
+enum tileAts {
+  SOLID =   1 << 7,
+  CONNECT = 1 << 6,
 };
 
 void getSurround(int i, char *map, char *surround);
@@ -81,7 +85,7 @@ void shiftCamera(const union arg *arg);
 
 struct tile tiles[] = {
   {' ', 0 },
-  {'#', 1 },
+  {'#', SOLID | CONNECT},
 };
 
 struct ent *ents[MAXENTS];
@@ -207,10 +211,10 @@ void loadMap(char *file) {
 chtype calculateWall(char *map, int i) {
   char surround[9];
   getSurround(i, map, surround);
-  int t = tiles[surround[1]].c == '#';
-  int l = tiles[surround[3]].c == '#';
-  int r = tiles[surround[5]].c == '#';
-  int b = tiles[surround[7]].c == '#';
+  int t = tiles[surround[1]].at & CONNECT;
+  int l = tiles[surround[3]].at & CONNECT;
+  int r = tiles[surround[5]].at & CONNECT;
+  int b = tiles[surround[7]].at & CONNECT;
 /*
   if(t && b && l && r) return ACS_PLUS;
   if(t && r && b) return ACS_LTEE;
