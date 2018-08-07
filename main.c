@@ -2,11 +2,17 @@
 #include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
+
+#define MAPWIDTH 20
+#define MAPHEIGHT 20
+#define MAPAREA MAPWIDTH * MAPHEIGHT
+#define MAXENTS 400
 
 #define LENGTH(X) (sizeof X / sizeof X[0])
-#define XYTOINDEX(X, Y) ((Y) * 20 + (X))
-#define INDEXTOX(I) (I % 20)
-#define INDEXTOY(I) (I / 20)
+#define XYTOINDEX(X, Y) ((Y) * MAPWIDTH + (X))
+#define INDEXTOX(I) (I % MAPWIDTH)
+#define INDEXTOY(I) (I / MAPWIDTH)
 #define BITSET(B, I) ((B >> 7 - I) & 1)
 #define SETBIT(B, I) (B |= (1 << 7 - I))
 
@@ -58,6 +64,9 @@ void drawEnts();
 void moveEnt(unsigned int i, unsigned int x, unsigned int y);
 #define shiftEnt(I, X, Y) moveEnt(I, ents[I]->loc.x + X, ents[I]->loc.y + Y)
 void processKeys(short code);
+void drawStatus();
+void setStatus(char *s);
+void setfStatus(char *s, ...);
 void setup();
 int main();
 void quit(const union arg *arg);
@@ -68,7 +77,7 @@ struct tile tiles[] = {
   {'#', 0 },
 };
 
-struct ent *ents[400];
+struct ent *ents[MAXENTS];
 
 struct key keys[] = {
   { 'q', GAME, quit, { 0 } },
@@ -80,7 +89,7 @@ struct key keys[] = {
 
 uint8_t state = GAME;
 
-char map[400] = {
+char map[MAPAREA] = {
   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
   0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
   0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -102,6 +111,8 @@ char map[400] = {
   0,0,0,0,0,0,1,1,1,0,0,0,1,0,0,0,0,0,0,0,
   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, };
 
+char status[50] = "test";
+
 void setup() {
   setlocale(LC_ALL, "en_US.UTF-8");
   if(!initscr()) exit(1);
@@ -118,6 +129,7 @@ void quit(const union arg *arg) {
 
 void movePlayer(const union arg *arg) {
   int d = arg->i;
+  setfStatus("Arg was %d!", d);
   switch(arg->i) {
     case UP:
       shiftEnt(0, 0, -1);
@@ -141,6 +153,7 @@ int main() {
   while(1) {
     drawMap(map);
     drawEnts();
+    drawStatus();
     processKeys(getch());
   }
   endwin();
@@ -149,7 +162,7 @@ int main() {
 void drawMap(char* map) {
   int i;
   chtype c;
-  for(i = 0; i < 400; i++) {
+  for(i = 0; i < MAPAREA; i++) {
     c = tiles[map[i]].c;
     if(c == '#')
       c = calculateWall(map, i);
@@ -219,14 +232,14 @@ chtype calculateWall(char *map, int i) {
 
 void getSurround(int i, char *map, char *surround) {
   int n, j;
-  for(n = 0, j = -21; n < 9; n++, j = ((n / 3 - 1) * 20) + (n % 3 - 1)) {
+  for(n = 0, j = -MAPWIDTH - 1; n < 9; n++, j = ((n / 3 - 1) * MAPWIDTH) + (n % 3 - 1)) {
     surround[n] = map[i + j];
   }
 }
 
 void drawEnts() {
   int i;
-  for(i = 0; i < 400; i++)
+  for(i = 0; i < MAXENTS; i++)
     if(ents[i]) mvaddch(ents[i]->loc.y, ents[i]->loc.x, ents[i]->c);
 }
 
@@ -237,7 +250,7 @@ unsigned int createEnt(chtype c, int x, int y, uint8_t at) {
   ent->loc.y = y;
   ent->at = at;
   int i;
-  for(i = 0; i < 400; i++) {
+  for(i = 0; i < MAXENTS; i++) {
     if(!ents[i]) {
       ents[i] = ent;
       break;
@@ -260,4 +273,26 @@ void processKeys(short code){
   for(i = 0; i < LENGTH(keys); i++) {
     if(keys[i].code == code) keys[i].func(&keys[i].arg);
   }
+}
+
+void drawStatus() {
+  mvaddstr(getmaxy(stdscr) - 1, 0, status); 
+}
+
+void setStatus(char *s) {
+  int i;
+  for(i = 0; i < 20; i++) {
+    if(s[i] == '\0') break;
+    status[i] = s[i];
+  }
+  status[i + 1] = '\0';
+}
+
+void setfStatus(char *s, ...) {
+  va_list args;
+  va_start(args, s);
+
+  vsnprintf(status, 20, s, args);
+
+  va_end(args);
 }
