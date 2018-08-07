@@ -10,6 +10,11 @@
 #define BITSET(B, I) ((B >> 7 - I) & 1)
 #define SETBIT(B, I) (B |= (1 << 7 - I))
 
+struct point {
+  int x;
+  int y;
+};
+
 struct tile {
   chtype c;
   uint8_t at;
@@ -17,14 +22,16 @@ struct tile {
 
 struct ent {
   chtype c;
-  int x;
-  int y;
+  struct point loc;
   uint8_t at;
 };
 
 union arg {
   int i;
   void *v;
+  struct ent e;
+  struct tile t;
+  struct point p;
 };
 
 struct key {
@@ -35,8 +42,11 @@ struct key {
 };
 
 enum tiles { FLOOR, WALL };
+enum directions { UP, DOWN, LEFT, RIGHT };
 enum states {
-  GAME = 1 << 7,
+  GAME =   1 << 7,
+  CURSOR = 1 << 6,
+  EDIT =   1 << 5,
 };
 
 void getSurround(int i, char *map, char *surround);
@@ -45,10 +55,13 @@ void drawMap(char* map);
 unsigned int createEnt(chtype c, int x, int y, uint8_t at);
 void deleteEnt(unsigned int i);
 void drawEnts();
+void moveEnt(unsigned int i, unsigned int x, unsigned int y);
+#define shiftEnt(I, X, Y) moveEnt(I, ents[I]->loc.x + X, ents[I]->loc.y + Y)
 void processKeys(short code);
 void setup();
 int main();
 void quit(const union arg *arg);
+void movePlayer(const union arg *arg);
 
 struct tile tiles[] = {
   {' ', 0 },
@@ -59,6 +72,10 @@ struct ent *ents[400];
 
 struct key keys[] = {
   { 'q', GAME, quit, { 0 } },
+  { 'w', GAME, movePlayer, { .i = UP } },
+  { 's', GAME, movePlayer, { .i = DOWN } },
+  { 'a', GAME, movePlayer, { .i = LEFT } },
+  { 'd', GAME, movePlayer, { .i = RIGHT } },
 };
 
 uint8_t state = GAME;
@@ -99,9 +116,28 @@ void quit(const union arg *arg) {
   exit(0);
 }
 
+void movePlayer(const union arg *arg) {
+  int d = arg->i;
+  switch(arg->i) {
+    case UP:
+      shiftEnt(0, 0, -1);
+      break;
+    case DOWN:
+      shiftEnt(0, 0, 1);
+      break;
+    case LEFT:
+      shiftEnt(0, -1, 0);
+      break;
+    case RIGHT:
+      shiftEnt(0, 1, 0);
+      break;
+  }
+}
+
 int main() {
   setup();
   unsigned int player = createEnt('d', 7, 7, 0);
+  shiftEnt(player, 5, 5);
   while(1) {
     drawMap(map);
     drawEnts();
@@ -191,23 +227,32 @@ void getSurround(int i, char *map, char *surround) {
 void drawEnts() {
   int i;
   for(i = 0; i < 400; i++)
-    if(ents[i]) mvaddch(ents[i]->y, ents[i]->x, ents[i]->c);
+    if(ents[i]) mvaddch(ents[i]->loc.y, ents[i]->loc.x, ents[i]->c);
 }
 
 unsigned int createEnt(chtype c, int x, int y, uint8_t at) {
   struct ent *ent = malloc(sizeof(struct ent));
   ent->c = c;
-  ent->x = x;
-  ent->y = y;
+  ent->loc.x = x;
+  ent->loc.y = y;
   ent->at = at;
   int i;
-  for(i = 0; i < 400; i++)
-    ents[i] = !ents[i] ? ent : NULL;
+  for(i = 0; i < 400; i++) {
+    if(!ents[i]) {
+      ents[i] = ent;
+      break;
+    }
+  }
   return i;
 }
 
 void deleteEnt(unsigned int i) {
   free(ents[i]);
+}
+
+void moveEnt(unsigned int i, unsigned int x, unsigned int y) {
+  ents[i]->loc.x = x;
+  ents[i]->loc.y = y;
 }
 
 void processKeys(short code){
