@@ -72,6 +72,7 @@ void setup();
 int main();
 void quit(const union arg *arg);
 void shiftPlayer(const union arg *arg);
+void shiftCamera(const union arg *arg);
 
 struct tile tiles[] = {
   {' ', 0 },
@@ -86,9 +87,14 @@ struct key keys[] = {
   { 's', GAME, shiftPlayer, { .p = {0,1} } },
   { 'a', GAME, shiftPlayer, { .p = {-1,0} } },
   { 'd', GAME, shiftPlayer, { .p = {1,0} } },
+  { 'i', GAME, shiftCamera, { .p = {0,1} } },
+  { 'k', GAME, shiftCamera, { .p = {0,-1} } },
+  { 'j', GAME, shiftCamera, { .p = {1,0} } },
+  { 'l', GAME, shiftCamera, { .p = {-1,0} } },
 };
 
 uint8_t state = GAME;
+struct point camera = {0, 0};
 
 char map[MAPAREA] = {
   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -133,10 +139,15 @@ void shiftPlayer(const union arg *arg) {
   shiftEnt(0, p.x, p.y);
 }
 
+void shiftCamera(const union arg *arg) {
+  struct point p = arg->p;
+  camera.x += p.x;
+  camera.y += p.y;
+}
+
 int main() {
   setup();
   unsigned int player = createEnt('d', 7, 7, 0);
-  shiftEnt(player, 5, 5);
   while(1) {
     drawMap(map);
     drawEnts();
@@ -153,7 +164,7 @@ void drawMap(char* map) {
     c = tiles[map[i]].c;
     if(c == '#')
       c = calculateWall(map, i);
-    mvaddch(INDEXTOY(i), INDEXTOX(i), c);
+    mvaddch(INDEXTOY(i) + camera.y, INDEXTOX(i) + camera.x, c);
   }
 }
 
@@ -214,7 +225,7 @@ chtype calculateWall(char *map, int i) {
   if(r)
     return ACS_HLINE;
 
-  return '1';
+  return '#';
 }
 
 void getSurround(int i, char *map, char *surround) {
@@ -227,7 +238,7 @@ void getSurround(int i, char *map, char *surround) {
 void drawEnts() {
   int i;
   for(i = 0; i < MAXENTS; i++)
-    if(ents[i]) mvaddch(ents[i]->loc.y, ents[i]->loc.x, ents[i]->c);
+    if(ents[i]) mvaddch(ents[i]->loc.y + camera.y, ents[i]->loc.x + camera.x, ents[i]->c);
 }
 
 unsigned int createEnt(chtype c, int x, int y, uint8_t at) {
@@ -265,7 +276,7 @@ void processKeys(short code){
 }
 
 void drawStatus() {
-  mvaddstr(getmaxy(stdscr) - 1, 0, status); 
+  mvaddstr(getmaxy(stdscr) - 1, 0, status);
 }
 
 void clearStatus() {
