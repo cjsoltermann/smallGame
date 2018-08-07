@@ -3,13 +3,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <stdarg.h>
+
+#define MAPWIDTH 20
+#define MAPHEIGHT 20
+#define MAPAREA MAPWIDTH * MAPHEIGHT
+#define MAXENTS 400
 
 #define LENGTH(X) (sizeof X / sizeof X[0])
-#define XYTOINDEX(X, Y) ((Y) * 20 + (X))
-#define INDEXTOX(I) (I % 20)
-#define INDEXTOY(I) (I / 20)
+#define XYTOINDEX(X, Y) ((Y) * MAPWIDTH + (X))
+#define INDEXTOX(I) (I % MAPWIDTH)
+#define INDEXTOY(I) (I / MAPWIDTH)
 #define BITSET(B, I) ((B >> 7 - I) & 1)
 #define SETBIT(B, I) (B |= (1 << 7 - I))
+#define ISVALID(X, Y) (X < MAPWIDTH && X >= 0 && Y < MAPHEIGHT && Y >= 0)
 
 struct point {
   int x;
@@ -54,35 +61,45 @@ enum states {
 void getSurround(int i, char *map, char *surround);
 chtype calculateWall(char *map, int i);
 void drawMap(char* map);
+void loadMap(char* file);
 unsigned int createEnt(chtype c, int x, int y, uint8_t at);
 void deleteEnt(unsigned int i);
 void drawEnts();
 void moveEnt(unsigned int i, unsigned int x, unsigned int y);
 #define shiftEnt(I, X, Y) moveEnt(I, ents[I]->loc.x + (X), ents[I]->loc.y + (Y))
 void processKeys(short code);
+void drawStatus();
+void clearStatus();
+void setStatus(char *s, ...);
 void setup();
 int main();
 void quit(const union arg *arg);
-void movePlayer(const union arg *arg);
+void shiftPlayer(const union arg *arg);
+void shiftCamera(const union arg *arg);
 
 struct tile tiles[] = {
   {' ', 0 },
   {'#', 0 },
 };
 
-struct ent *ents[400];
+struct ent *ents[MAXENTS];
 
 struct key keys[] = {
   { 'q', GAME, quit, { 0 } },
-  { 'w', GAME, movePlayer, { .i = UP } },
-  { 's', GAME, movePlayer, { .i = DOWN } },
-  { 'a', GAME, movePlayer, { .i = LEFT } },
-  { 'd', GAME, movePlayer, { .i = RIGHT } },
+  { 'w', GAME, shiftPlayer, { .p = {0,-1} } },
+  { 's', GAME, shiftPlayer, { .p = {0,1} } },
+  { 'a', GAME, shiftPlayer, { .p = {-1,0} } },
+  { 'd', GAME, shiftPlayer, { .p = {1,0} } },
+  { 'i', GAME, shiftCamera, { .p = {0,1} } },
+  { 'k', GAME, shiftCamera, { .p = {0,-1} } },
+  { 'j', GAME, shiftCamera, { .p = {1,0} } },
+  { 'l', GAME, shiftCamera, { .p = {-1,0} } },
 };
 
 uint8_t state = GAME;
+struct point camera = {0, 0};
 
-char map[400] = {
+char map[MAPAREA] = {
   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
   0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
   0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -104,6 +121,8 @@ char map[400] = {
   0,0,0,0,0,0,1,1,1,0,0,0,1,0,0,0,0,0,0,0,
   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, };
 
+char status[50] = "test";
+
 void setup() {
   setlocale(LC_ALL, "en_US.UTF-8");
   if(!initscr()) exit(1);
@@ -118,22 +137,15 @@ void quit(const union arg *arg) {
   exit(0);
 }
 
-void movePlayer(const union arg *arg) {
-  int d = arg->i;
-  switch(arg->i) {
-    case UP:
-      shiftEnt(0, 0, -1);
-      break;
-    case DOWN:
-      shiftEnt(0, 0, 1);
-      break;
-    case LEFT:
-      shiftEnt(0, -1, 0);
-      break;
-    case RIGHT:
-      shiftEnt(0, 1, 0);
-      break;
-  }
+void shiftPlayer(const union arg *arg) {
+  struct point p = arg->p;
+  shiftEnt(0, p.x, p.y);
+}
+
+void shiftCamera(const union arg *arg) {
+  struct point p = arg->p;
+  camera.x += p.x;
+  camera.y += p.y;
 }
 
 void dogThink(unsigned int ent) {
@@ -143,7 +155,7 @@ void dogThink(unsigned int ent) {
 
 void updateEnts() {
   int i;
-  for(i = 0; i < 400; i++) {
+  for(i = 0; i < MAXENTS; i++) {
     if(ents[i] && ents[i]->think) ents[i]->think(i);
   }
 }
@@ -165,11 +177,27 @@ int main() {
 void drawMap(char* map) {
   int i;
   chtype c;
-  for(i = 0; i < 400; i++) {
+  for(i = 0; i < MAPAREA; i++) {
     c = tiles[map[i]].c;
     if(c == '#')
       c = calculateWall(map, i);
-    mvaddch(INDEXTOY(i), INDEXTOX(i), c);
+    mvaddch(INDEXTOY(i) + camera.y, INDEXTOX(i) + camera.x, c);
+  }
+}
+
+void loadMap(char *file) {
+  int i, c;
+  FILE *f = fopen(file, "r");
+  if(f) {
+    setStatus("Error loading map %s", file);
+    return;
+  }
+  for(i = 0; i < MAPAREA; i++) {
+    c = fgetc(f);
+    if(c != EOF) {
+      map[i] = (char)c;
+    }
+    else break;
   }
 }
 
@@ -230,20 +258,20 @@ chtype calculateWall(char *map, int i) {
   if(r)
     return ACS_HLINE;
 
-  return '1';
+  return '#';
 }
 
 void getSurround(int i, char *map, char *surround) {
   int n, j;
-  for(n = 0, j = -21; n < 9; n++, j = ((n / 3 - 1) * 20) + (n % 3 - 1)) {
+  for(n = 0, j = -MAPWIDTH - 1; n < 9; n++, j = ((n / 3 - 1) * MAPWIDTH) + (n % 3 - 1)) {
     surround[n] = map[i + j];
   }
 }
 
 void drawEnts() {
   int i;
-  for(i = 0; i < 400; i++)
-    if(ents[i]) mvaddch(ents[i]->loc.y, ents[i]->loc.x, ents[i]->c);
+  for(i = 0; i < MAXENTS; i++)
+    if(ents[i]) mvaddch(ents[i]->loc.y + camera.y, ents[i]->loc.x + camera.x, ents[i]->c);
 }
 
 unsigned int createEnt(chtype c, int x, int y, uint8_t at) {
@@ -254,7 +282,7 @@ unsigned int createEnt(chtype c, int x, int y, uint8_t at) {
   ent->think = NULL;
   ent->at = at;
   int i;
-  for(i = 0; i < 400; i++) {
+  for(i = 0; i < MAXENTS; i++) {
     if(!ents[i]) {
       ents[i] = ent;
       break;
@@ -268,8 +296,10 @@ void deleteEnt(unsigned int i) {
 }
 
 void moveEnt(unsigned int i, unsigned int x, unsigned int y) {
-  ents[i]->loc.x = x;
-  ents[i]->loc.y = y;
+  if(ISVALID(x, y)) {
+    ents[i]->loc.x = x;
+    ents[i]->loc.y = y;
+  }
 }
 
 void processKeys(short code){
@@ -277,4 +307,25 @@ void processKeys(short code){
   for(i = 0; i < LENGTH(keys); i++) {
     if(keys[i].code == code) keys[i].func(&keys[i].arg);
   }
+}
+
+void drawStatus() {
+  mvaddstr(getmaxy(stdscr) - 1, 0, status);
+}
+
+void clearStatus() {
+  int i;
+  for(i = 0; i < 50; i++) {
+    status[i] = ' ';
+  }
+}
+
+void setStatus(char *s, ...) {
+  clearStatus();
+  va_list args;
+  va_start(args, s);
+
+  vsnprintf(status, 50, s, args);
+
+  va_end(args);
 }
