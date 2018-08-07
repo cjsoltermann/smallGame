@@ -2,6 +2,7 @@
 #include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 #define LENGTH(X) (sizeof X / sizeof X[0])
 #define XYTOINDEX(X, Y) ((Y) * 20 + (X))
@@ -23,6 +24,7 @@ struct tile {
 struct ent {
   chtype c;
   struct point loc;
+  void (*think)(unsigned int ent);
   uint8_t at;
 };
 
@@ -56,7 +58,7 @@ unsigned int createEnt(chtype c, int x, int y, uint8_t at);
 void deleteEnt(unsigned int i);
 void drawEnts();
 void moveEnt(unsigned int i, unsigned int x, unsigned int y);
-#define shiftEnt(I, X, Y) moveEnt(I, ents[I]->loc.x + X, ents[I]->loc.y + Y)
+#define shiftEnt(I, X, Y) moveEnt(I, ents[I]->loc.x + (X), ents[I]->loc.y + (Y))
 void processKeys(short code);
 void setup();
 int main();
@@ -134,13 +136,27 @@ void movePlayer(const union arg *arg) {
   }
 }
 
+void dogThink(unsigned int ent) {
+  srand(clock());
+  shiftEnt(ent, rand() % 2 * 2 -1, rand() % 2 * 2 - 1);
+}
+
+void updateEnts() {
+  int i;
+  for(i = 0; i < 400; i++) {
+    if(ents[i] && ents[i]->think) ents[i]->think(i);
+  }
+}
+
 int main() {
   setup();
-  unsigned int player = createEnt('d', 7, 7, 0);
-  shiftEnt(player, 5, 5);
+  unsigned int player = createEnt('@', 7, 7, 0);
+  unsigned int dog = createEnt('d', 8, 8, 0);
+  ents[dog]->think = dogThink;
   while(1) {
     drawMap(map);
     drawEnts();
+    updateEnts();
     processKeys(getch());
   }
   endwin();
@@ -235,6 +251,7 @@ unsigned int createEnt(chtype c, int x, int y, uint8_t at) {
   ent->c = c;
   ent->loc.x = x;
   ent->loc.y = y;
+  ent->think = NULL;
   ent->at = at;
   int i;
   for(i = 0; i < 400; i++) {
