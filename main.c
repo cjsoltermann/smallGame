@@ -68,9 +68,9 @@ enum entAts {
   GHOST = 1 << 7,
 };
 
-void getSurround(int i, char *map, char *surround);
-chtype calculateWall(char *map, int i);
-void drawMap(char* map);
+void getSurround(int i, unsigned char *map, unsigned char *surround);
+chtype calculateWall(unsigned char *map, int i);
+void drawMap(unsigned char* map);
 void loadMap(char* file);
 unsigned int createEnt(chtype c, int x, int y, uint8_t at);
 void deleteEnt(unsigned int i);
@@ -123,7 +123,7 @@ uint8_t state = GAME;
 struct point camera = {0, 0};
 int turn;
 
-char map[MAPAREA] = {
+unsigned char map[MAPAREA] = {
   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
   0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
   0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,
@@ -215,7 +215,7 @@ void mainLoop() {
 
 int main() {
   setup();
-  unsigned int player = createEnt('@', 7, 7, 0);
+  createEnt('@', 7, 7, 0);
   unsigned int dog = createEnt('d', 8, 8, 0);
   ents[dog]->think = dogThink;
   unsigned int wolf = createEnt('w', 9, 9, 0);
@@ -227,7 +227,7 @@ int main() {
   endwin();
 }
 
-void drawMap(char* map) {
+void drawMap(unsigned char* map) {
   int i;
   chtype c;
   for(i = 0; i < MAPAREA; i++) {
@@ -258,14 +258,14 @@ void loadMap(char *file) {
   for(i = 0; i < MAPAREA; i++) {
     c = fgetc(f);
     if(c != EOF) {
-      map[i] = (char)c;
+      map[i] = (unsigned char)c;
     }
     else break;
   }
 }
 
-chtype calculateWall(char *map, int i) {
-  char surround[9];
+chtype calculateWall(unsigned char *map, int i) {
+  unsigned char surround[9];
   getSurround(i, map, surround);
   int t = tiles[surround[1]].at & CONNECT;
   int l = tiles[surround[3]].at & CONNECT;
@@ -310,7 +310,7 @@ chtype calculateWall(char *map, int i) {
   return ACS_PLUS;
 }
 
-void getSurround(int i, char *map, char *surround) {
+void getSurround(int i, unsigned char *map, unsigned char *surround) {
   int n, j;
   for(n = 0, j = -MAPWIDTH - 1; n < 9; n++, j = ((n / 3 - 1) * MAPWIDTH) + (n % 3 - 1)) {
     surround[n] = map[i + j];
