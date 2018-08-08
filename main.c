@@ -78,12 +78,17 @@ unsigned int entAt(unsigned int x, unsigned int y);
 void processKeys(short code);
 void drawStatus();
 void clearStatus();
+void addToLog(char *s, ...);
 void setStatus(char *s, ...);
 void setup();
 void mainLoop();
 void quit(const union arg *arg);
 void shiftPlayer(const union arg *arg);
 void shiftCamera(const union arg *arg);
+void count(const union arg *arg);
+void placeWall(const union arg *arg);
+void saveMap(const union arg *arg);
+void enableEdit(const union arg *arg);
 
 struct tile tiles[] = {
   {' ', 0 },
@@ -105,6 +110,10 @@ struct key keys[] = {
   { 'k',       GAME,      shiftCamera, { .p = {0,-1} },  },
   { 'j',       GAME,      shiftCamera, { .p = {1, 0} },  },
   { 'l',       GAME,      shiftCamera, { .p = {-1,0} },  },
+  { 'n',       GAME,         count,       { 0 },         },
+  { 'p',       GAME,       enableEdit,    { 0 },         },
+  { 'e',       EDIT,       placeWall,     { 0 },         },
+  { 'r',       EDIT,        saveMap,      { 0 },         },
 };
 
 uint8_t state = GAME;
@@ -133,8 +142,7 @@ char map[MAPAREA] = {
   0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 char status[50] = "test";
-char statusLog[50 * 10];
-char *logPos = statusLog;
+char statusLog[1000];
 
 void setup() {
   setlocale(LC_ALL, "en_US.UTF-8");
@@ -159,6 +167,20 @@ void shiftCamera(const union arg *arg) {
   struct point p = arg->p;
   camera.x += p.x;
   camera.y += p.y;
+}
+
+void count(const union arg *arg) {
+  static int counter;
+  setStatus("You've pressed that button %d times!", counter++);
+}
+
+void placeWall(const union arg *arg) {
+  map[XYTOINDEX(ents[0]->loc.x, ents[0]->loc.y)] = WALL;
+}
+
+void enableEdit(const union arg *arg) {
+  loadMap("custom.map");
+  state |= EDIT;
 }
 
 void dogThink(unsigned int ent) {
@@ -197,7 +219,6 @@ int main() {
   loadMap("map1.map");
   setStatus("test2");
   setStatus("test3");
-  setStatus(statusLog);
   mainLoop();
   endwin();
 }
@@ -211,6 +232,13 @@ void drawMap(char* map) {
       c = calculateWall(map, i);
     mvaddch(INDEXTOY(i) + camera.y, INDEXTOX(i) + camera.x, c);
   }
+}
+
+void saveMap(const union arg *arg) {
+  int i;
+  FILE *f = fopen("custom.map", "w");
+  for(i = 0; i < MAPAREA; i++)
+    fputc(map[i], f);
 }
 
 void loadMap(char *file) {
@@ -330,7 +358,7 @@ unsigned int entAt(unsigned int x, unsigned int y) {
 void processKeys(short code){
   int i;
   for(i = 0; i < LENGTH(keys); i++) {
-    if(keys[i].code == code) {
+    if(keys[i].code == code && keys[i].mask & state) {
       keys[i].func(&keys[i].arg);
       turn += keys[i].cost;
     }
@@ -354,14 +382,18 @@ void clearStatus() {
   }
 }
 
-void setStatus(char *s, ...) {
+void addToLog(char *s, ...) {
   int i;
-  for(i = 0; i < 50; i++) {
-    if(status[i] != '\0')
-      logPos[i] = status[i];
-    else break;
-  }
-  logPos += 50 * sizeof(char);
+  for(i = 0; i < 1000 && statusLog[i++] != '\0';);
+  if(i == 1000) i = 0;
+  va_list args;
+  va_start(args, s);
+  
+  vsnprintf(statusLog + i, 50, s, args);
+}
+
+void setStatus(char *s, ...) {
+  addToLog(status);
   clearStatus();
   va_list args;
   va_start(args, s);
