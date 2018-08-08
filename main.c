@@ -178,7 +178,6 @@ void mainLoop() {
     while(turn == lastTurn) {
       drawMap(map);
       drawEnts();
-      setStatus("Turn: %d", turn);
       drawStatus();
       processKeys(getch());
     }
