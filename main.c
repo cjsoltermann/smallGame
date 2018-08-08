@@ -50,6 +50,7 @@ struct key {
   uint8_t mask;
   void (*func)(const union arg*);
   const union arg arg;
+  int cost;
 };
 
 enum tiles { FLOOR, WALL, DOOR, FOUNTAIN };
@@ -94,15 +95,16 @@ struct tile tiles[] = {
 struct ent *ents[MAXENTS];
 
 struct key keys[] = {
-  { 'q', GAME, quit, { 0 } },
-  { 'w', GAME, shiftPlayer, { .p = {0,-1} } },
-  { 's', GAME, shiftPlayer, { .p = {0,1} } },
-  { 'a', GAME, shiftPlayer, { .p = {-1,0} } },
-  { 'd', GAME, shiftPlayer, { .p = {1,0} } },
-  { 'i', GAME, shiftCamera, { .p = {0,1} } },
-  { 'k', GAME, shiftCamera, { .p = {0,-1} } },
-  { 'j', GAME, shiftCamera, { .p = {1,0} } },
-  { 'l', GAME, shiftCamera, { .p = {-1,0} } },
+  //key        mode        function        arg        cost
+  { 'q',       GAME,         quit,        { 0 }          },
+  { 'w',       GAME,      shiftPlayer, { .p = {0,-1} }, 1},
+  { 's',       GAME,      shiftPlayer, { .p = {0, 1} }, 1},
+  { 'a',       GAME,      shiftPlayer, { .p = {-1,0} }, 1},
+  { 'd',       GAME,      shiftPlayer, { .p = {1, 0} }, 1},
+  { 'i',       GAME,      shiftCamera, { .p = {0, 1} },  },
+  { 'k',       GAME,      shiftCamera, { .p = {0,-1} },  },
+  { 'j',       GAME,      shiftCamera, { .p = {1, 0} },  },
+  { 'l',       GAME,      shiftCamera, { .p = {-1,0} },  },
 };
 
 uint8_t state = GAME;
@@ -149,7 +151,6 @@ void quit(const union arg *arg) {
 void shiftPlayer(const union arg *arg) {
   struct point p = arg->p;
   shiftEnt(0, p.x, p.y);
-  turn++;
 }
 
 void shiftCamera(const union arg *arg) {
@@ -326,6 +327,7 @@ void processKeys(short code){
   for(i = 0; i < LENGTH(keys); i++) {
     if(keys[i].code == code) {
       keys[i].func(&keys[i].arg);
+      turn += keys[i].cost;
     }
   }
 }
