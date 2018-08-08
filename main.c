@@ -51,7 +51,7 @@ struct key {
   const union arg arg;
 };
 
-enum tiles { FLOOR, WALL };
+enum tiles { FLOOR, WALL, DOOR };
 enum directions { UP, DOWN, LEFT, RIGHT };
 enum states {
   GAME =    1 << 7,
@@ -86,6 +86,7 @@ void shiftCamera(const union arg *arg);
 struct tile tiles[] = {
   {' ', 0 },
   {'#', SOLID | CONNECT},
+  {'+', CONNECT},
 };
 
 struct ent *ents[MAXENTS];
