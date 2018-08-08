@@ -64,6 +64,9 @@ enum tileAts {
   SOLID =   1 << 7,
   CONNECT = 1 << 6,
 };
+enum entAts {
+  GHOST = 1 << 7,
+};
 
 void getSurround(int i, char *map, char *surround);
 chtype calculateWall(char *map, int i);
@@ -181,6 +184,7 @@ void placeWall(const union arg *arg) {
 void enableEdit(const union arg *arg) {
   loadMap("custom.map");
   state |= EDIT;
+  ents[0]->at |= GHOST;
 }
 
 void dogThink(unsigned int ent) {
@@ -341,7 +345,7 @@ void deleteEnt(unsigned int i) {
 }
 
 void moveEnt(unsigned int i, unsigned int x, unsigned int y) {
-  if(ISVALID(x, y) && entAt(x, y) == -1 && !ISSOLID(x, y)) {
+  if(ISVALID(x, y) && entAt(x, y) == -1 && (!ISSOLID(x, y) || ents[i]->at & GHOST)) {
     ents[i]->loc.x = x;
     ents[i]->loc.y = y;
   }
