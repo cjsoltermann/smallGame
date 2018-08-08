@@ -73,12 +73,12 @@ void drawEnts();
 void moveEnt(unsigned int i, unsigned int x, unsigned int y);
 #define shiftEnt(I, X, Y) moveEnt(I, ents[I]->loc.x + (X), ents[I]->loc.y + (Y))
 unsigned int entAt(unsigned int x, unsigned int y);
-int processKeys(short code);
+void processKeys(short code);
 void drawStatus();
 void clearStatus();
 void setStatus(char *s, ...);
 void setup();
-int main();
+void mainLoop();
 void quit(const union arg *arg);
 void shiftPlayer(const union arg *arg);
 void shiftCamera(const union arg *arg);
@@ -105,6 +105,7 @@ struct key keys[] = {
 
 uint8_t state = GAME;
 struct point camera = {0, 0};
+int turn;
 
 char map[MAPAREA] = {
   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -146,6 +147,7 @@ void quit(const union arg *arg) {
 void shiftPlayer(const union arg *arg) {
   struct point p = arg->p;
   shiftEnt(0, p.x, p.y);
+  turn++;
 }
 
 void shiftCamera(const union arg *arg) {
@@ -166,19 +168,28 @@ void updateEnts() {
   }
 }
 
+void mainLoop() {
+  int lastTurn = 0;
+  while(1) {
+    for(;lastTurn < turn; lastTurn++)
+      updateEnts();
+    while(turn == lastTurn) {
+      drawMap(map);
+      drawEnts();
+      setStatus("Turn: %d", turn);
+      drawStatus();
+      processKeys(getch());
+    }
+  }
+}
+
 int main() {
   setup();
   unsigned int player = createEnt('@', 7, 7, 0);
   unsigned int dog = createEnt('d', 8, 8, 0);
   ents[dog]->think = dogThink;
   loadMap("map1.map");
-  while(1) {
-    drawMap(map);
-    drawEnts();
-    drawStatus();
-    updateEnts();
-    while(!processKeys(getch()));
-  }
+  mainLoop();
   endwin();
 }
 
@@ -304,15 +315,13 @@ unsigned int entAt(unsigned int x, unsigned int y) {
   return -1;
 }
 
-int processKeys(short code){
+void processKeys(short code){
   int i;
   for(i = 0; i < LENGTH(keys); i++) {
     if(keys[i].code == code) {
       keys[i].func(&keys[i].arg);
-      return 1;
     }
   }
-  return 0;
 }
 
 void drawStatus() {
