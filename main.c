@@ -189,6 +189,8 @@ int main() {
   unsigned int player = createEnt('@', 7, 7, 0);
   unsigned int dog = createEnt('d', 8, 8, 0);
   ents[dog]->think = dogThink;
+  unsigned int wolf = createEnt('w', 9, 9, 0);
+  ents[wolf]->think = dogThink;
   loadMap("map1.map");
   mainLoop();
   endwin();
