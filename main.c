@@ -133,6 +133,8 @@ char map[MAPAREA] = {
   0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 char status[50] = "test";
+char statusLog[50 * 10];
+char *logPos = statusLog;
 
 void setup() {
   setlocale(LC_ALL, "en_US.UTF-8");
@@ -193,6 +195,9 @@ int main() {
   unsigned int wolf = createEnt('w', 9, 9, 0);
   ents[wolf]->think = dogThink;
   loadMap("map1.map");
+  setStatus("test2");
+  setStatus("test3");
+  setStatus(statusLog);
   mainLoop();
   endwin();
 }
@@ -234,7 +239,7 @@ chtype calculateWall(char *map, int i) {
   int l = tiles[surround[3]].at & CONNECT;
   int r = tiles[surround[5]].at & CONNECT;
   int b = tiles[surround[7]].at & CONNECT;
-  
+
   if(t) {
     if(b) {
       if(l) {
@@ -333,7 +338,13 @@ void processKeys(short code){
 }
 
 void drawStatus() {
-  mvaddstr(getmaxy(stdscr) - 1, 0, status);
+  int i;
+  for(i = 0; i < 50; i++) {
+    if(status[i] != '\0')
+      mvaddch(getmaxy(stdscr) - 1, i, status[i]);
+    else return;
+  }
+  //mvaddstr(getmaxy(stdscr) - 1, 0, status);
 }
 
 void clearStatus() {
@@ -344,6 +355,13 @@ void clearStatus() {
 }
 
 void setStatus(char *s, ...) {
+  int i;
+  for(i = 0; i < 50; i++) {
+    if(status[i] != '\0')
+      logPos[i] = status[i];
+    else break;
+  }
+  logPos += 50 * sizeof(char);
   clearStatus();
   va_list args;
   va_start(args, s);
