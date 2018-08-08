@@ -9,6 +9,7 @@
 #define MAPHEIGHT 20
 #define MAPAREA MAPWIDTH * MAPHEIGHT
 #define MAXENTS 400
+#define WALLCHAR '\5'
 
 #define LENGTH(X) (sizeof X / sizeof X[0])
 #define XYTOINDEX(X, Y) ((Y) * MAPWIDTH + (X))
@@ -51,7 +52,7 @@ struct key {
   const union arg arg;
 };
 
-enum tiles { FLOOR, WALL, DOOR };
+enum tiles { FLOOR, WALL, DOOR, FOUNTAIN };
 enum directions { UP, DOWN, LEFT, RIGHT };
 enum states {
   GAME =    1 << 7,
@@ -85,8 +86,9 @@ void shiftCamera(const union arg *arg);
 
 struct tile tiles[] = {
   {' ', 0 },
-  {'#', SOLID | CONNECT},
+  {WALLCHAR, SOLID | CONNECT},
   {'+', CONNECT},
+  {'#', SOLID},
 };
 
 struct ent *ents[MAXENTS];
@@ -198,7 +200,7 @@ void drawMap(char* map) {
   chtype c;
   for(i = 0; i < MAPAREA; i++) {
     c = tiles[map[i]].c;
-    if(c == '#')
+    if(c == WALLCHAR)
       c = calculateWall(map, i);
     mvaddch(INDEXTOY(i) + camera.y, INDEXTOX(i) + camera.x, c);
   }
@@ -263,7 +265,7 @@ chtype calculateWall(char *map, int i) {
   if(r)
     return ACS_HLINE;
 
-  return '#';
+  return ACS_PLUS;
 }
 
 void getSurround(int i, char *map, char *surround) {
