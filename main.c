@@ -73,7 +73,7 @@ void drawEnts();
 void moveEnt(unsigned int i, unsigned int x, unsigned int y);
 #define shiftEnt(I, X, Y) moveEnt(I, ents[I]->loc.x + (X), ents[I]->loc.y + (Y))
 unsigned int entAt(unsigned int x, unsigned int y);
-void processKeys(short code);
+int processKeys(short code);
 void drawStatus();
 void clearStatus();
 void setStatus(char *s, ...);
@@ -177,7 +177,7 @@ int main() {
     drawEnts();
     drawStatus();
     updateEnts();
-    processKeys(getch());
+    while(!processKeys(getch()));
   }
   endwin();
 }
@@ -304,11 +304,15 @@ unsigned int entAt(unsigned int x, unsigned int y) {
   return -1;
 }
 
-void processKeys(short code){
+int processKeys(short code){
   int i;
   for(i = 0; i < LENGTH(keys); i++) {
-    if(keys[i].code == code) keys[i].func(&keys[i].arg);
+    if(keys[i].code == code) {
+      keys[i].func(&keys[i].arg);
+      return 1;
+    }
   }
+  return 0;
 }
 
 void drawStatus() {
