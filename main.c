@@ -39,6 +39,15 @@ struct ent {
   struct point loc;
   void (*think)(unsigned int ent);
   uint8_t at;
+  void *data;
+};
+
+struct creature {
+  char name[30];
+  int health;
+  int attack;
+  int speed;
+  struct ent *ent;
 };
 
 union arg {
@@ -82,6 +91,7 @@ void drawEnts();
 void moveEnt(unsigned int i, unsigned int x, unsigned int y);
 #define shiftEnt(I, X, Y) moveEnt(I, ents[I]->loc.x + (X), ents[I]->loc.y + (Y))
 unsigned int entAt(unsigned int x, unsigned int y);
+struct creature *createCreature(chtype c, int x, int y, uint8_t at, char *name, int health, int attack, int speed);
 void processKeys(short code);
 void drawStatus();
 void clearStatus();
@@ -96,6 +106,7 @@ void count(const union arg *arg);
 void placeWall(const union arg *arg);
 void saveMap(const union arg *arg);
 void toggleEdit(const union arg *arg);
+void showLog(const union arg *arg);
 
 struct tile tiles[] = {
   {' ', 0 },
@@ -121,6 +132,7 @@ struct key keys[] = {
   { 'p',       GAME,       toggleEdit,    { 0 },         },
   { 'e',       EDIT,       placeWall,     { 0 },         },
   { 'r',       EDIT,        saveMap,      { 0 },         },
+  { 'r',       GAME,        showLog,      { 0 },         },
 };
 
 uint8_t state = GAME;
@@ -230,6 +242,7 @@ int main() {
   ents[dog]->think = dogThink;
   unsigned int wolf = createEnt('w', 9, 9, 0);
   ents[wolf]->think = dogThink;
+  struct creature *newDog = createCreature('D', 10, 10, 0, "Mr. Dog", 10, 10, 10);
   loadMap("map1.map");
   setStatus("test2");
   setStatus("test3");
@@ -369,6 +382,19 @@ unsigned int entAt(unsigned int x, unsigned int y) {
   return -1;
 }
 
+struct creature *createCreature(chtype c, int x, int y, uint8_t at, char *name, int health, int attack, int speed) {
+  int i;
+  unsigned int e = createEnt(c, x, y, at);
+  struct creature *cr = malloc(sizeof(struct creature));
+  for(i = 0; i < 50 && name[i] != '\0'; cr->name[i] = name[i], i++);
+  cr->health = health;
+  cr->attack = attack;
+  cr->speed = speed;
+  cr->ent = ents[e];
+  ents[e]->data = cr;
+  return cr;
+}
+
 void processKeys(short code){
   int i;
   for(i = 0; i < LENGTH(keys); i++) {
@@ -399,8 +425,8 @@ void clearStatus() {
 
 void addToLog(char *s, ...) {
   int i;
-  for(i = 0; i < 1000 && statusLog[i++] != '\0';);
-  if(i == 1000) i = 0;
+  for(i = 0; i < 1000 && statusLog[i] != '\0';i++);
+  statusLog[++i] = '\n';
   va_list args;
   va_start(args, s);
   
@@ -416,4 +442,16 @@ void setStatus(char *s, ...) {
   vsnprintf(status, 50, s, args);
 
   va_end(args);
+}
+
+void showLog(const union arg *arg) {
+  int i;
+  erase();
+  move(0,0);
+  for(i = 0; i < 1000; i++) {
+    if(statusLog[i] == '\0') break;
+    addch(statusLog[i]);
+  }
+  getch();
+  erase();
 }
