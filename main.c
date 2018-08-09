@@ -91,7 +91,7 @@ void shiftCamera(const union arg *arg);
 void count(const union arg *arg);
 void placeWall(const union arg *arg);
 void saveMap(const union arg *arg);
-void enableEdit(const union arg *arg);
+void toggleEdit(const union arg *arg);
 
 struct tile tiles[] = {
   {' ', 0 },
@@ -114,7 +114,7 @@ struct key keys[] = {
   { 'j',       GAME,      shiftCamera, { .p = {1, 0} },  },
   { 'l',       GAME,      shiftCamera, { .p = {-1,0} },  },
   { 'n',       GAME,         count,       { 0 },         },
-  { 'p',       GAME,       enableEdit,    { 0 },         },
+  { 'p',       GAME,       toggleEdit,    { 0 },         },
   { 'e',       EDIT,       placeWall,     { 0 },         },
   { 'r',       EDIT,        saveMap,      { 0 },         },
 };
@@ -181,10 +181,18 @@ void placeWall(const union arg *arg) {
   map[XYTOINDEX(ents[0]->loc.x, ents[0]->loc.y)] = WALL;
 }
 
-void enableEdit(const union arg *arg) {
-  loadMap("custom.map");
-  state |= EDIT;
-  ents[0]->at |= GHOST;
+void toggleEdit(const union arg *arg) {
+  state ^= EDIT;
+  if(state & EDIT) {
+    loadMap("custom.map");
+    state |= EDIT;
+    ents[0]->at |= GHOST;
+  }
+  else {
+    loadMap("map1.map");
+    state &= ~EDIT;
+    ents[0]->at &= ~GHOST;
+  }
 }
 
 void dogThink(unsigned int ent) {
@@ -365,6 +373,7 @@ void processKeys(short code){
     if(keys[i].code == code && keys[i].mask & state) {
       keys[i].func(&keys[i].arg);
       turn += keys[i].cost;
+      return;
     }
   }
 }
