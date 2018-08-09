@@ -19,6 +19,10 @@
 #define SETBIT(B, I) (B |= (1 << 7 - I))
 #define ISVALID(X, Y) (X < MAPWIDTH && X >= 0 && Y < MAPHEIGHT && Y >= 0)
 #define ISSOLID(X, Y) (tiles[map[XYTOINDEX(X, Y)]].at & SOLID)
+#define ENABLESTATE(S) state |= (S)
+#define DISABLESTATE(S) state |= ~(S)
+#define TOGGLESTATE(S) state ^= (S)
+#define STATEENABLED(S) state & (S)
 
 struct point {
   int x;
@@ -182,15 +186,13 @@ void placeWall(const union arg *arg) {
 }
 
 void toggleEdit(const union arg *arg) {
-  state ^= EDIT;
-  if(state & EDIT) {
+  TOGGLESTATE(EDIT);
+  if(STATEENABLED(EDIT)) {
     loadMap("custom.map");
-    state |= EDIT;
     ents[0]->at |= GHOST;
   }
   else {
     loadMap("map1.map");
-    state &= ~EDIT;
     ents[0]->at &= ~GHOST;
   }
 }
@@ -370,7 +372,7 @@ unsigned int entAt(unsigned int x, unsigned int y) {
 void processKeys(short code){
   int i;
   for(i = 0; i < LENGTH(keys); i++) {
-    if(keys[i].code == code && keys[i].mask & state) {
+    if(keys[i].code == code && STATEENABLED(keys[i].mask)) {
       keys[i].func(&keys[i].arg);
       turn += keys[i].cost;
       return;
