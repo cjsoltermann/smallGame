@@ -425,12 +425,14 @@ void clearStatus() {
 
 void addToLog(char *s, ...) {
   int i;
-  for(i = 0; i < 1000 && statusLog[i] != '\0';i++);
-  statusLog[++i] = '\n';
+  for(i = 0; i < 1000 - 50 && statusLog[i] != '\0'; i++);
+  statusLog[i] = '\n';
+  i++;
+  
   va_list args;
   va_start(args, s);
-  
   vsnprintf(statusLog + i, 50, s, args);
+  va_end(args);
 }
 
 void setStatus(char *s, ...) {
