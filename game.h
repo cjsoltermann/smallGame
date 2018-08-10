@@ -21,6 +21,7 @@
 #define DISABLESTATE(S) state |= ~(S)
 #define TOGGLESTATE(S) state ^= (S)
 #define STATEENABLED(S) state & (S)
+#define RANDRANGE(MIN, MAX) (rand() % (MAX) - (MIN)) + (MIN)
 
 struct point {
   int x;
