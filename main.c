@@ -161,7 +161,7 @@ unsigned char map[MAPAREA] = {
   0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 char status[50] = "test";
-char statusLog[1000];
+char *statusLog[100];
 
 void setup() {
   setlocale(LC_ALL, "en_US.UTF-8");
@@ -425,13 +425,14 @@ void clearStatus() {
 
 void addToLog(char *s, ...) {
   int i;
-  for(i = 0; i < 1000 - 50 && statusLog[i] != '\0'; i++);
-  statusLog[i] = '\n';
-  i++;
-  
+  for(i = 0; i < 100 && statusLog[i] != NULL; i++);
+  free(statusLog[i + 1]);
+  statusLog[(i + 1) % 100] = NULL;
+  statusLog[i] = malloc(50);
+
   va_list args;
   va_start(args, s);
-  vsnprintf(statusLog + i, 50, s, args);
+  vsnprintf(statusLog[i], 50, s, args);
   va_end(args);
 }
 
@@ -449,10 +450,10 @@ void setStatus(char *s, ...) {
 void showLog(const union arg *arg) {
   int i;
   erase();
-  move(0,0);
-  for(i = 0; i < 1000; i++) {
-    if(statusLog[i] == '\0') break;
-    addch(statusLog[i]);
+  for(i = 0; i < 1000 && statusLog[i+1] != NULL; i++);
+  printf("%d", i);
+  for(; statusLog[i % 100] != NULL; i--) {
+    mvaddstr(i, 0, statusLog[i]);
   }
   getch();
   erase();
