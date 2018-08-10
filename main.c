@@ -52,6 +52,7 @@ struct creature {
 
 union arg {
   int i;
+  char *s;
   void *v;
   struct ent e;
   struct tile t;
@@ -107,6 +108,7 @@ void placeWall(const union arg *arg);
 void saveMap(const union arg *arg);
 void toggleEdit(const union arg *arg);
 void showLog(const union arg *arg);
+void error(const union arg *arg);
 
 struct tile tiles[] = {
   {' ', 0 },
@@ -133,6 +135,7 @@ struct key keys[] = {
   { 'e',       EDIT,       placeWall,     { 0 },         },
   { 'r',       EDIT,        saveMap,      { 0 },         },
   { 'r',       GAME,        showLog,      { 0 },         },
+  { 'u',       GAME,         error,    { .s = "Test" }, },
 };
 
 uint8_t state = GAME;
@@ -426,7 +429,7 @@ void clearStatus() {
 void addToLog(char *s, ...) {
   int i;
   for(i = 0; i < 100 && statusLog[i] != NULL; i++);
-  free(statusLog[i + 1]);
+  free(statusLog[(i + 1) % 100]);
   statusLog[(i + 1) % 100] = NULL;
   statusLog[i] = malloc(50);
 
@@ -448,13 +451,18 @@ void setStatus(char *s, ...) {
 }
 
 void showLog(const union arg *arg) {
-  int i;
+  int i, j;
+  int y = getmaxy(stdscr) - 1;
   erase();
-  for(i = 0; i < 1000 && statusLog[i+1] != NULL; i++);
-  printf("%d", i);
-  for(; statusLog[i % 100] != NULL; i--) {
-    mvaddstr(i, 0, statusLog[i]);
+  for(i = 0; i < 100 && statusLog[i+1] != NULL; i++);
+  mvaddstr(y, 0, status);
+  for(j = y - 1; statusLog[i % 100] != NULL; i--, j--) {
+    mvaddstr(j, 0, statusLog[i % 100]);
   }
   getch();
   erase();
+}
+
+void error(const union arg *arg) {
+  addToLog("Error: %s", arg->s);
 }
