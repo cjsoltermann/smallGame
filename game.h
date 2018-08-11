@@ -53,8 +53,6 @@ union arg {
   int i;
   char *s;
   void *v;
-  struct ent e;
-  struct tile t;
   struct point p;
 };
 
