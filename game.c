@@ -434,7 +434,6 @@ void addToLog(char *s, ...) {
 }
 
 void setStatus(char *s, ...) {
-  addToLog(status);
   clearStatus();
   va_list args;
   va_start(args, s);
@@ -449,8 +448,7 @@ void showLog(const union arg *arg) {
   int y = getmaxy(stdscr) - 1;
   erase();
   for(i = 0; i < 100 && statusLog[i+1] != NULL; i++);
-  mvaddstr(y, 0, status);
-  for(j = y - 1; statusLog[i % 100] != NULL; i--, j--) {
+  for(j = y; statusLog[i % 100] != NULL; i--, j--) {
     mvaddstr(j, 0, statusLog[i % 100]);
   }
   getch();
