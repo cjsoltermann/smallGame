@@ -109,6 +109,7 @@ void placeWall(const union arg *arg);
 void saveMap(const union arg *arg);
 void toggleEdit(const union arg *arg);
 void showLog(const union arg *arg);
+void saveLog(char *file);
 void error(const union arg *arg);
 
 struct tile tiles[] = {
@@ -166,7 +167,7 @@ unsigned char map[MAPAREA] = {
   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
 char status[50] = "test";
-char *statusLog[100];
+char *gameLog[100];
 
 void dogThink(unsigned int ent) {
   srand(clock());
@@ -187,16 +188,30 @@ int main() {
 }
 
 void setup() {
+  addToLog("Beginning setup...");
   setlocale(LC_ALL, "en_US.UTF-8");
   if(!initscr()) exit(1);
   cbreak();
   noecho();
   curs_set(0);
   keypad(stdscr, TRUE);
+  addToLog("Setup successful!");
 }
 
 void quit(const union arg *arg) {
+  int i;
+  addToLog("Ending window...");
   endwin();
+  addToLog("Freeing memory...");
+  for(i = 0; i < MAXENTS; i++) {
+    if(ents[i] == NULL) continue;
+    if(ents[i]->data) free(ents[i]->data);
+    free(ents[i]);
+  }
+  addToLog("Saving log...");
+  saveLog("log");
+  for(i = 0; i < 100; i++)
+    free(gameLog[i]);
   exit(0);
 }
 
@@ -240,6 +255,7 @@ void updateEnts() {
 }
 
 void mainLoop() {
+  addToLog("Beginning main loop.");
   int lastTurn = 0;
   while(1) {
     for(;lastTurn < turn; lastTurn++)
@@ -272,10 +288,11 @@ void saveMap(const union arg *arg) {
 }
 
 void loadMap(char *file) {
+  addToLog("Loading map %s", file);
   int i, c;
   FILE *f = fopen(file, "r");
   if(!f) {
-    addToLog("Map %s does not exist, creating...", file);
+    addToLog("Map does not exist, creating...");
     f = fopen(file, "w+");
     for(i = 0; i < MAPAREA; i++)
       fputc(map[i], f);
@@ -286,7 +303,10 @@ void loadMap(char *file) {
     if(c != EOF) {
       map[i] = (unsigned char)c;
     }
-    else break;
+    else {
+      addToLog("Map file ended early!");
+      break;
+    }
   }
 }
 
@@ -436,14 +456,14 @@ void clearStatus() {
 
 void addToLog(char *s, ...) {
   int i;
-  for(i = 0; i < 100 && statusLog[i] != NULL; i++);
-  free(statusLog[(i + 1) % 100]);
-  statusLog[(i + 1) % 100] = NULL;
-  statusLog[i] = malloc(50);
+  for(i = 0; i < 100 && gameLog[i] != NULL; i++);
+  free(gameLog[(i + 1) % 100]);
+  gameLog[(i + 1) % 100] = NULL;
+  gameLog[i] = malloc(50);
 
   va_list args;
   va_start(args, s);
-  vsnprintf(statusLog[i], 50, s, args);
+  vsnprintf(gameLog[i], 50, s, args);
   va_end(args);
 }
 
@@ -461,12 +481,23 @@ void showLog(const union arg *arg) {
   int i, j;
   int y = getmaxy(stdscr) - 1;
   erase();
-  for(i = 0; i < 100 && statusLog[i+1] != NULL; i++);
-  for(j = y; statusLog[i % 100] != NULL; i--, j--) {
-    mvaddstr(j, 0, statusLog[i % 100]);
+  for(i = 0; i < 100 && gameLog[i+1] != NULL; i++);
+  for(j = y; gameLog[i % 100] != NULL; i--, j--) {
+    mvaddstr(j, 0, gameLog[i % 100]);
   }
   getch();
   erase();
+}
+
+void saveLog(char *file) {
+  int i;
+  FILE *f = fopen(file, "w");
+  for(i = 0; i < 100; i++) {
+    if(gameLog[i]) {
+      fputs(gameLog[i], f);
+      fputc('\n', f);
+    }
+  }
 }
 
 void error(const union arg *arg) {
