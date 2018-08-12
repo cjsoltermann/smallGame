@@ -1,5 +1,5 @@
 all:
-	gcc -ggdb3 -Wall -lncurses main.c game.c
+	gcc -ggdb3 -Wall -lncurses game.c
 
 run:
 	./a.out
