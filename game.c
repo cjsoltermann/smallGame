@@ -120,10 +120,28 @@ struct tile tiles[] = {
 
 struct ent *ents[MAXENTS];
 
-extern struct key keys[];
 uint8_t state = GAME;
 struct point camera = {0, 0};
 int turn;
+
+struct key keys[] = {
+  //key        mode        function        arg        cost
+  { 'q',       GAME,         quit,        { 0 }          },
+  { 'w',       GAME,      shiftPlayer, { .p = {0,-1} }, 1},
+  { 's',       GAME,      shiftPlayer, { .p = {0, 1} }, 1},
+  { 'a',       GAME,      shiftPlayer, { .p = {-1,0} }, 1},
+  { 'd',       GAME,      shiftPlayer, { .p = {1, 0} }, 1},
+  { 'i',       GAME,      shiftCamera, { .p = {0, 1} },  },
+  { 'k',       GAME,      shiftCamera, { .p = {0,-1} },  },
+  { 'j',       GAME,      shiftCamera, { .p = {1, 0} },  },
+  { 'l',       GAME,      shiftCamera, { .p = {-1,0} },  },
+  { 'n',       GAME,         count,       { 0 },         },
+  { 'p',       GAME,       toggleEdit,    { 0 },         },
+  { 'e',       EDIT,       placeWall,     { 0 },         },
+  { 'r',       EDIT,        saveMap,      { 0 },         },
+  { 'b',       GAME,        showLog,      { 0 },         },
+  { 'u',       GAME,         error,    { .s = "Test" }, },
+};
 
 unsigned char map[MAPAREA] = {
   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -150,8 +168,6 @@ unsigned char map[MAPAREA] = {
 char status[50] = "test";
 char *statusLog[100];
 
-#include "config.h"
-
 void dogThink(unsigned int ent) {
   srand(clock());
   shiftEnt(ent, rand() % 3 - 1, rand() % 3 - 1);
@@ -166,8 +182,6 @@ int main() {
   setEntThink(wolf, dogThink);
   struct creature *newDog = createCreature('D', 10, 10, 0, "Mr. Dog", 10, 10, 10);
   loadMap("map1.map");
-  setStatus("test2");
-  setStatus("test3");
   mainLoop();
   endwin();
 }
@@ -261,7 +275,7 @@ void loadMap(char *file) {
   int i, c;
   FILE *f = fopen(file, "r");
   if(!f) {
-    setStatus("Map %s does not exist, creating...", file);
+    addToLog("Map %s does not exist, creating...", file);
     f = fopen(file, "w+");
     for(i = 0; i < MAPAREA; i++)
       fputc(map[i], f);
