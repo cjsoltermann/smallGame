@@ -44,6 +44,7 @@ struct ent {
 };
 
 struct creature {
+  char sig;
   char name[30];
   int health;
   int attack;
@@ -92,8 +93,11 @@ void moveEnt(unsigned int i, unsigned int x, unsigned int y);
 #define shiftEnt(I, X, Y) moveEnt(I, getLoc(I).x + (X), getLoc(I).y + (Y))
 unsigned int entAt(unsigned int x, unsigned int y);
 struct point getLoc(unsigned int ent);
-void setEntThink(unsigned int ent, void (*fn)(unsigned int ent));
-struct creature *createCreature(chtype c, int x, int y, uint8_t at, char *name, int health, int attack, int speed);
+void setThink(unsigned int ent, void (*fn)(unsigned int ent));
+unsigned int createCreature(chtype c, int x, int y, uint8_t at, char *name, int health, int attack, int speed);
+int isCreature(unsigned int ent);
+struct creature *creatureData(unsigned int ent);
+void attack(unsigned int from, unsigned int to);
 void processKeys(short code);
 void drawStatus();
 void clearStatus();
@@ -178,10 +182,14 @@ int main() {
   setup();
   createEnt('@', 7, 7, 0);
   unsigned int dog = createEnt('d', 8, 8, 0);
-  setEntThink(dog, dogThink);
+  setThink(dog, dogThink);
   unsigned int wolf = createEnt('w', 9, 9, 0);
-  setEntThink(wolf, dogThink);
-  struct creature *newDog = createCreature('D', 10, 10, 0, "Mr. Dog", 10, 10, 10);
+  setThink(wolf, dogThink);
+  unsigned int newDog = createCreature('D', 10, 10, 0, "Mr. Dog", 10, 10, 10);
+  setThink(newDog, dogThink);
+  unsigned int anotherDog = createCreature('D', 10, 10, 0, "Mrs. Dog", 10, 10, 10);
+  setThink(anotherDog, dogThink);
+  attack(newDog, anotherDog);
   loadMap("map1.map");
   mainLoop();
   endwin();
@@ -409,21 +417,42 @@ struct point getLoc(unsigned int ent) {
   return ents[ent]->loc;
 }
 
-void setEntThink(unsigned int ent, void (*fn)(unsigned int ent)) {
+void setThink(unsigned int ent, void (*fn)(unsigned int ent)) {
   if(ents[ent]) ents[ent]->think = fn;
 }
 
-struct creature *createCreature(chtype c, int x, int y, uint8_t at, char *name, int health, int attack, int speed) {
+unsigned int createCreature(chtype c, int x, int y, uint8_t at, char *name, int health, int attack, int speed) {
   int i;
   unsigned int e = createEnt(c, x, y, at);
   struct creature *cr = malloc(sizeof(struct creature));
   for(i = 0; i < 50 && name[i] != '\0'; cr->name[i] = name[i], i++);
+  cr->sig = 'c';
   cr->health = health;
   cr->attack = attack;
   cr->speed = speed;
   cr->ent = ents[e];
   ents[e]->data = cr;
-  return cr;
+  return e;
+}
+
+int isCreature(unsigned int ent) {
+  if(ents[ent] && ents[ent]->data) {
+    if(*(char *)ents[ent]->data == 'c') return 1;
+  }
+  return 0;
+}
+struct creature *creatureData(unsigned int ent) {
+  if(ents[ent] && ents[ent]->data) {
+    return (struct creature *)ents[ent]->data;
+  }
+  return NULL;
+}
+
+void attack(unsigned int from, unsigned int to) {
+  if (!isCreature(from) || !isCreature(to)) return;
+  creatureData(to)->health -= creatureData(from)->attack;
+  addToLog("%s was attacked by %s. Now they have %d and %d health, respectively.", creatureData(from)->name, creatureData(to)->name,
+      creatureData(from)->health, creatureData(to)->health);
 }
 
 void processKeys(short code){
