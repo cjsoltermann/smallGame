@@ -10,6 +10,8 @@
 #define MAPAREA MAPWIDTH * MAPHEIGHT
 #define MAXENTS 400
 #define WALLCHAR '\5'
+#define LOGLENGTH 1000
+#define MESSAGELENGTH 100
 
 #define LENGTH(X) (sizeof X / sizeof X[0])
 #define XYTOINDEX(X, Y) ((Y) * MAPWIDTH + (X))
@@ -170,8 +172,8 @@ unsigned char map[MAPAREA] = {
   0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
-char status[50] = "test";
-char *gameLog[100];
+char status[MESSAGELENGTH] = "test";
+char *gameLog[LOGLENGTH];
 
 void dogThink(unsigned int ent) {
   srand(clock());
@@ -218,7 +220,7 @@ void quit(const union arg *arg) {
   }
   addToLog("Saving log...");
   saveLog("log");
-  for(i = 0; i < 100; i++)
+  for(i = 0; i < LOGLENGTH; i++)
     free(gameLog[i]);
   exit(0);
 }
@@ -468,7 +470,7 @@ void processKeys(short code){
 
 void drawStatus() {
   int i;
-  for(i = 0; i < 50; i++) {
+  for(i = 0; i < MESSAGELENGTH; i++) {
     if(status[i] != '\0')
       mvaddch(getmaxy(stdscr) - 1, i, status[i]);
     else return;
@@ -478,21 +480,21 @@ void drawStatus() {
 
 void clearStatus() {
   int i;
-  for(i = 0; i < 50; i++) {
+  for(i = 0; i < MESSAGELENGTH; i++) {
     status[i] = ' ';
   }
 }
 
 void addToLog(char *s, ...) {
   int i;
-  for(i = 0; i < 100 && gameLog[i] != NULL; i++);
-  free(gameLog[(i + 1) % 100]);
-  gameLog[(i + 1) % 100] = NULL;
-  gameLog[i] = malloc(50);
+  for(i = 0; i < LOGLENGTH && gameLog[i] != NULL; i++);
+  free(gameLog[(i + 1) % LOGLENGTH]);
+  gameLog[(i + 1) % LOGLENGTH] = NULL;
+  gameLog[i] = malloc(MESSAGELENGTH);
 
   va_list args;
   va_start(args, s);
-  vsnprintf(gameLog[i], 50, s, args);
+  vsnprintf(gameLog[i], MESSAGELENGTH, s, args);
   va_end(args);
 }
 
@@ -501,7 +503,7 @@ void setStatus(char *s, ...) {
   va_list args;
   va_start(args, s);
 
-  vsnprintf(status, 50, s, args);
+  vsnprintf(status, MESSAGELENGTH, s, args);
 
   va_end(args);
 }
@@ -510,9 +512,9 @@ void showLog(const union arg *arg) {
   int i, j;
   int y = getmaxy(stdscr) - 1;
   erase();
-  for(i = 0; i < 100 && gameLog[i+1] != NULL; i++);
-  for(j = y; gameLog[i % 100] != NULL; i--, j--) {
-    mvaddstr(j, 0, gameLog[i % 100]);
+  for(i = 0; i < LOGLENGTH && gameLog[i+1] != NULL; i++);
+  for(j = y; gameLog[i % LOGLENGTH] != NULL; i--, j--) {
+    mvaddstr(j, 0, gameLog[i % LOGLENGTH]);
   }
   getch();
   erase();
@@ -521,7 +523,7 @@ void showLog(const union arg *arg) {
 void saveLog(char *file) {
   int i;
   FILE *f = fopen(file, "w");
-  for(i = 0; i < 100; i++) {
+  for(i = 0; i < LOGLENGTH; i++) {
     if(gameLog[i]) {
       fputs(gameLog[i], f);
       fputc('\n', f);
