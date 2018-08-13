@@ -140,20 +140,20 @@ int turn;
 struct key keys[] = {
   //key        mode        function        arg        cost
   { 'q',       GAME,         quit,        { 0 }          },
-  { 'w',       GAME,      shiftPlayer, { .p = UP }, 1},
-  { 's',       GAME,      shiftPlayer, { .p = DOWN }, 1},
-  { 'a',       GAME,      shiftPlayer, { .p = LEFT }, 1},
-  { 'd',       GAME,      shiftPlayer, { .p = RIGHT }, 1},
-  { 'i',       GAME,      shiftCamera, { .p = UP },  },
-  { 'k',       GAME,      shiftCamera, { .p = DOWN },  },
-  { 'j',       GAME,      shiftCamera, { .p = LEFT },  },
-  { 'l',       GAME,      shiftCamera, { .p = RIGHT },  },
+  { 'w',       GAME,      shiftPlayer, { .p = UP    }, 1 },
+  { 's',       GAME,      shiftPlayer, { .p = DOWN  }, 1 },
+  { 'a',       GAME,      shiftPlayer, { .p = LEFT  }, 1 },
+  { 'd',       GAME,      shiftPlayer, { .p = RIGHT }, 1 },
+  { 'i',       GAME,      shiftCamera, { .p = UP    },   },
+  { 'k',       GAME,      shiftCamera, { .p = DOWN  },   },
+  { 'j',       GAME,      shiftCamera, { .p = LEFT  },   },
+  { 'l',       GAME,      shiftCamera, { .p = RIGHT },   },
   { 'n',       GAME,         count,       { 0 },         },
   { 'p',       GAME,       toggleEdit,    { 0 },         },
   { 'e',       EDIT,       placeWall,     { 0 },         },
   { 'r',       EDIT,        saveMap,      { 0 },         },
   { 'b',       GAME,        showLog,      { 0 },         },
-  { 'u',       GAME,         error,    { .s = "Test" }, },
+  { 'u',       GAME,         error,    { .s = "Test" },  },
 };
 
 unsigned char map[MAPAREA] = {
