@@ -89,6 +89,7 @@ enum tileAts {
 };
 enum entAts {
   GHOST = 1 << 7,
+  PLAYER = 1,
 };
 
 void getSurround(int i, unsigned char *map, unsigned char *surround);
@@ -101,6 +102,7 @@ void drawEnts();
 void moveEnt(unsigned int i, unsigned int x, unsigned int y);
 #define shiftEnt(I, X, Y) moveEnt(I, getLoc(I).x + (X), getLoc(I).y + (Y))
 unsigned int entAt(unsigned int x, unsigned int y);
+unsigned int getPlayer();
 struct point getLoc(unsigned int ent);
 void setThink(unsigned int ent, void (*fn)(unsigned int ent));
 unsigned int createCreature(chtype c, int x, int y, uint8_t at, char *name, int health, int attack, int speed);
@@ -125,6 +127,7 @@ void toggleCursor(const union arg *arg);
 void showLog(const union arg *arg);
 void saveLog(char *file);
 void error(const union arg *arg);
+inline int wrap(int i, int n);
 
 struct tile tiles[] = {
   {' ', 0 },
@@ -140,31 +143,23 @@ struct point camera = {0, 0};
 int turn;
 
 struct key keys[] = {
-  //key        mode        function        arg        cost
-  { 'q',        ALL,         quit,        { 0 }          },
-  { 'w',       GAME,      shiftPlayer, { .p = UP    }, 1 },
-  { 's',       GAME,      shiftPlayer, { .p = DOWN  }, 1 },
-  { 'a',       GAME,      shiftPlayer, { .p = LEFT  }, 1 },
-  { 'd',       GAME,      shiftPlayer, { .p = RIGHT }, 1 },
-  { 'i',       GAME,      shiftCamera, { .p = UP    },   },
-  { 'k',       GAME,      shiftCamera, { .p = DOWN  },   },
-  { 'j',       GAME,      shiftCamera, { .p = LEFT  },   },
-  { 'l',       GAME,      shiftCamera, { .p = RIGHT },   },
-  { 'n',       GAME,         count,       { 0 },         },
-  { 'p',    GAME | EDIT,   toggleEdit,    { 0 },         },
-  { 'e',       EDIT,       placeWall,     { 0 },         },
-  { 'r',       EDIT,        saveMap,      { 0 },         },
-  { 'w',       EDIT,      shiftPlayer, { .p = UP    },   },
-  { 's',       EDIT,      shiftPlayer, { .p = DOWN  },   },
-  { 'a',       EDIT,      shiftPlayer, { .p = LEFT  },   },
-  { 'd',       EDIT,      shiftPlayer, { .p = RIGHT },   },
-  { 'b',       GAME,        showLog,      { 0 },         },
-  { 'u',       GAME,         error,    { .s = "Test" },  },
-  { 'c',   GAME | CURSOR, toggleCursor,   { 0 },         },
-  { 'w',      CURSOR,      shiftPlayer, { .p = UP    },  },
-  { 's',      CURSOR,      shiftPlayer, { .p = DOWN  },  },
-  { 'a',      CURSOR,      shiftPlayer, { .p = LEFT  },  },
-  { 'd',      CURSOR,      shiftPlayer, { .p = RIGHT },  },
+  //key        mode                 function        arg        cost
+  { 'q',         ALL,                  quit,        { 0 }          },
+  { 'w',         ALL,               shiftPlayer, { .p = UP    }, 1 },
+  { 's',         ALL,               shiftPlayer, { .p = DOWN  }, 1 },
+  { 'a',         ALL,               shiftPlayer, { .p = LEFT  }, 1 },
+  { 'd',         ALL,               shiftPlayer, { .p = RIGHT }, 1 },
+  { 'i',        GAME,               shiftCamera, { .p = UP    },   },
+  { 'k',        GAME,               shiftCamera, { .p = DOWN  },   },
+  { 'j',        GAME,               shiftCamera, { .p = LEFT  },   },
+  { 'l',        GAME,               shiftCamera, { .p = RIGHT },   },
+  { 'n',        GAME,                  count,       { 0 },         },
+  { 'p',     GAME | EDIT,            toggleEdit,    { 0 },         },
+  { 'e',        EDIT,                placeWall,     { 0 },         },
+  { 'r',        EDIT,                 saveMap,      { 0 },         },
+  { 'b',        GAME,                 showLog,      { 0 },         },
+  { 'u',         ALL,                  error,    { .s = "Test" },  },
+  { 'c',    GAME | CURSOR,          toggleCursor,   { 0 },         },
 };
 
 unsigned char map[MAPAREA] = {
@@ -244,7 +239,9 @@ void quit(const union arg *arg) {
 
 void shiftPlayer(const union arg *arg) {
   struct point p = arg->p;
-  shiftEnt(0, p.x, p.y);
+  unsigned int player = getPlayer();
+  addToLog("%d", player);
+  shiftEnt(player, p.x, p.y);
 }
 
 void shiftCamera(const union arg *arg) {
@@ -437,7 +434,15 @@ unsigned int entAt(unsigned int x, unsigned int y) {
   for(i = 0; i < MAXENTS; i++) {
     if(ents[i] && ents[i]->loc.x == x && ents[i]->loc.y == y) return i;
   }
-  return -1;
+  return 0;
+}
+
+unsigned int getPlayer() {
+  int i;
+  for(i = 0; i < MAXENTS; i++) {
+    if(ents[i] && ents[i]->at & PLAYER) return i;
+  }
+  return 0;
 }
 
 struct point getLoc(unsigned int ent) {
@@ -537,10 +542,12 @@ void showLog(const union arg *arg) {
   int i, j;
   int y = getmaxy(stdscr) - 1;
   erase();
-  for(i = 0; i < LOGLENGTH && gameLog[i+1] != NULL; i++);
-  for(j = y; gameLog[i % LOGLENGTH] != NULL; i--, j--) {
-    mvaddstr(j, 0, gameLog[i % LOGLENGTH]);
+
+  for(i = 0; i < LOGLENGTH && gameLog[i + 1] != NULL; i++);
+  for(j = y; j > 0 && gameLog[wrap(i, LOGLENGTH)] != NULL; i--, j--) {
+    mvaddstr(j, 0, gameLog[wrap(i, LOGLENGTH)]);
   }
+
   getch();
   erase();
 }
@@ -558,4 +565,8 @@ void saveLog(char *file) {
 
 void error(const union arg *arg) {
   addToLog("Error: %s", arg->s);
+}
+
+int wrap(int i, int n) {
+  return (i % n + n) % n;
 }
