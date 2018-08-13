@@ -144,7 +144,7 @@ int turn;
 
 struct key keys[] = {
   //key        mode                 function        arg        cost
-  { 'q',        GAME,                  quit,        { 0 }          },
+  { 'q',        ALL,                   quit,        { 0 }          },
   { 'w',        GAME,               shiftPlayer, { .p = UP    }, 1 },
   { 's',        GAME,               shiftPlayer, { .p = DOWN  }, 1 },
   { 'a',        GAME,               shiftPlayer, { .p = LEFT  }, 1 },
