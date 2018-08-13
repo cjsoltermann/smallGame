@@ -292,7 +292,7 @@ void drawMap(unsigned char* map) {
     c = tiles[map[i]].c;
     if(c == WALLCHAR)
       c = calculateWall(map, i);
-    mvaddch(INDEXTOY(i) + camera.y, INDEXTOX(i) + camera.x, c);
+    mvaddch(INDEXTOY(i) - camera.y, INDEXTOX(i) - camera.x, c);
   }
 }
 
@@ -382,7 +382,7 @@ void getSurround(int i, unsigned char *map, unsigned char *surround) {
 void drawEnts() {
   int i;
   for(i = 0; i < MAXENTS; i++)
-    if(ents[i]) mvaddch(ents[i]->loc.y + camera.y, ents[i]->loc.x + camera.x, ents[i]->c);
+    if(ents[i]) mvaddch(ents[i]->loc.y - camera.y, ents[i]->loc.x - camera.x, ents[i]->c);
 }
 
 unsigned int createEnt(chtype c, int x, int y, uint8_t at) {
