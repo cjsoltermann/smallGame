@@ -158,7 +158,7 @@ struct key keys[] = {
   { 'e',        EDIT,                placeWall,     { 0 },         },
   { 'r',        EDIT,                 saveMap,      { 0 },         },
   { 'b',        GAME,                 showLog,      { 0 },         },
-  { 'u',         ALL,                  error,    { .s = "Test" },  },
+  { 'u',         ALL,                  error,    { .s = "Test" },1 },
   { 'c',    GAME | CURSOR,          toggleCursor,   { 0 },         },
 };
 
@@ -194,7 +194,7 @@ void dogThink(unsigned int ent) {
 
 int main() {
   setup();
-  createEnt('@', 7, 7, 0);
+  createEnt('@', 7, 7, PLAYER);
   unsigned int dog = createEnt('d', 8, 8, 0);
   setThink(dog, dogThink);
   unsigned int wolf = createEnt('w', 9, 9, 0);
@@ -434,7 +434,7 @@ unsigned int entAt(unsigned int x, unsigned int y) {
   for(i = 0; i < MAXENTS; i++) {
     if(ents[i] && ents[i]->loc.x == x && ents[i]->loc.y == y) return i;
   }
-  return 0;
+  return -1;
 }
 
 unsigned int getPlayer() {
@@ -564,7 +564,7 @@ void saveLog(char *file) {
 }
 
 void error(const union arg *arg) {
-  addToLog("Error: %s", arg->s);
+  addToLog("Error: %s on turn %d", arg->s, turn);
 }
 
 int wrap(int i, int n) {
