@@ -12,6 +12,7 @@
 #define WALLCHAR '\5'
 #define LOGLENGTH 1000
 #define MESSAGELENGTH 100
+#define NAMELENGTH 50
 
 #define LENGTH(X) (sizeof X / sizeof X[0])
 #define XYTOINDEX(X, Y) ((Y) * MAPWIDTH + (X))
@@ -427,7 +428,7 @@ unsigned int createCreature(chtype c, int x, int y, uint8_t at, char *name, int 
   int i;
   unsigned int e = createEnt(c, x, y, at);
   struct creature *cr = malloc(sizeof(struct creature));
-  for(i = 0; i < 50 && name[i] != '\0'; cr->name[i] = name[i], i++);
+  for(i = 0; i < NAMELENGTH && name[i] != '\0'; cr->name[i] = name[i], i++);
   cr->sig = 'c';
   cr->health = health;
   cr->attack = attack;
