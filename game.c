@@ -144,11 +144,15 @@ int turn;
 
 struct key keys[] = {
   //key        mode                 function        arg        cost
-  { 'q',         ALL,                  quit,        { 0 }          },
-  { 'w',         ALL,               shiftPlayer, { .p = UP    }, 1 },
-  { 's',         ALL,               shiftPlayer, { .p = DOWN  }, 1 },
-  { 'a',         ALL,               shiftPlayer, { .p = LEFT  }, 1 },
-  { 'd',         ALL,               shiftPlayer, { .p = RIGHT }, 1 },
+  { 'q',        GAME,                  quit,        { 0 }          },
+  { 'w',        GAME,               shiftPlayer, { .p = UP    }, 1 },
+  { 's',        GAME,               shiftPlayer, { .p = DOWN  }, 1 },
+  { 'a',        GAME,               shiftPlayer, { .p = LEFT  }, 1 },
+  { 'd',        GAME,               shiftPlayer, { .p = RIGHT }, 1 },
+  { 'w',   EDIT | CURSOR,           shiftPlayer, { .p = UP    },   },
+  { 's',   EDIT | CURSOR,           shiftPlayer, { .p = DOWN  },   },
+  { 'a',   EDIT | CURSOR,           shiftPlayer, { .p = LEFT  },   },
+  { 'd',   EDIT | CURSOR,           shiftPlayer, { .p = RIGHT },   },
   { 'i',        GAME,               shiftCamera, { .p = UP    },   },
   { 'k',        GAME,               shiftCamera, { .p = DOWN  },   },
   { 'j',        GAME,               shiftCamera, { .p = LEFT  },   },
@@ -269,13 +273,16 @@ void toggleEdit(const union arg *arg) {
 }
 
 void toggleCursor(const union arg *arg) {
+  unsigned int cursor;
   TOGGLESTATE(CURSOR);
   TOGGLESTATE(GAME);
   if(STATEENABLED(CURSOR)) {
-    ents[0]->at |= GHOST;
+    ents[0]->at &= ~PLAYER;
+    createEnt('@', 5, 5, PLAYER | GHOST);
   }
   else {
-    ents[0]->at &= ~GHOST;
+    deleteEnt(getPlayer());
+    ents[0]->at |= PLAYER;
   }
 }
 
@@ -420,6 +427,7 @@ unsigned int createEnt(chtype c, int x, int y, uint8_t at) {
 
 void deleteEnt(unsigned int i) {
   free(ents[i]);
+  ents[i] = NULL;
 }
 
 void moveEnt(unsigned int i, unsigned int x, unsigned int y) {
