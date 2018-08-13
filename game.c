@@ -14,6 +14,11 @@
 #define MESSAGELENGTH 100
 #define NAMELENGTH 50
 
+#define UP {0, -1}
+#define DOWN {0, 1}
+#define LEFT {-1, 0}
+#define RIGHT {1, 0}
+
 #define LENGTH(X) (sizeof X / sizeof X[0])
 #define XYTOINDEX(X, Y) ((Y) * MAPWIDTH + (X))
 #define INDEXTOX(I) (I % MAPWIDTH)
@@ -48,7 +53,7 @@ struct ent {
 
 struct creature {
   char sig;
-  char name[30];
+  char name[NAMELENGTH];
   int health;
   int attack;
   int speed;
@@ -71,7 +76,7 @@ struct key {
 };
 
 enum tiles { FLOOR, WALL, DOOR, FOUNTAIN };
-enum directions { UP, DOWN, LEFT, RIGHT };
+
 enum states {
   GAME =    1 << 7,
   CURSOR =  1 << 6,
@@ -135,14 +140,14 @@ int turn;
 struct key keys[] = {
   //key        mode        function        arg        cost
   { 'q',       GAME,         quit,        { 0 }          },
-  { 'w',       GAME,      shiftPlayer, { .p = {0,-1} }, 1},
-  { 's',       GAME,      shiftPlayer, { .p = {0, 1} }, 1},
-  { 'a',       GAME,      shiftPlayer, { .p = {-1,0} }, 1},
-  { 'd',       GAME,      shiftPlayer, { .p = {1, 0} }, 1},
-  { 'i',       GAME,      shiftCamera, { .p = {0, 1} },  },
-  { 'k',       GAME,      shiftCamera, { .p = {0,-1} },  },
-  { 'j',       GAME,      shiftCamera, { .p = {1, 0} },  },
-  { 'l',       GAME,      shiftCamera, { .p = {-1,0} },  },
+  { 'w',       GAME,      shiftPlayer, { .p = UP }, 1},
+  { 's',       GAME,      shiftPlayer, { .p = DOWN }, 1},
+  { 'a',       GAME,      shiftPlayer, { .p = LEFT }, 1},
+  { 'd',       GAME,      shiftPlayer, { .p = RIGHT }, 1},
+  { 'i',       GAME,      shiftCamera, { .p = UP },  },
+  { 'k',       GAME,      shiftCamera, { .p = DOWN },  },
+  { 'j',       GAME,      shiftCamera, { .p = LEFT },  },
+  { 'l',       GAME,      shiftCamera, { .p = RIGHT },  },
   { 'n',       GAME,         count,       { 0 },         },
   { 'p',       GAME,       toggleEdit,    { 0 },         },
   { 'e',       EDIT,       placeWall,     { 0 },         },
