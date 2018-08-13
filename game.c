@@ -415,6 +415,7 @@ unsigned int createEnt(chtype c, int x, int y, uint8_t at) {
   ent->loc.y = y;
   ent->think = NULL;
   ent->at = at;
+  ent->data = NULL;
   int i;
   for(i = 0; i < MAXENTS; i++) {
     if(!ents[i]) {
