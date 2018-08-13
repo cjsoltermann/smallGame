@@ -81,6 +81,7 @@ enum states {
   GAME =    1 << 7,
   CURSOR =  1 << 6,
   EDIT =    1 << 5,
+  ALL =     255,
 };
 enum tileAts {
   SOLID =   1 << 7,
@@ -120,6 +121,7 @@ void count(const union arg *arg);
 void placeWall(const union arg *arg);
 void saveMap(const union arg *arg);
 void toggleEdit(const union arg *arg);
+void toggleCursor(const union arg *arg);
 void showLog(const union arg *arg);
 void saveLog(char *file);
 void error(const union arg *arg);
@@ -139,7 +141,7 @@ int turn;
 
 struct key keys[] = {
   //key        mode        function        arg        cost
-  { 'q',       GAME,         quit,        { 0 }          },
+  { 'q',        ALL,         quit,        { 0 }          },
   { 'w',       GAME,      shiftPlayer, { .p = UP    }, 1 },
   { 's',       GAME,      shiftPlayer, { .p = DOWN  }, 1 },
   { 'a',       GAME,      shiftPlayer, { .p = LEFT  }, 1 },
@@ -154,6 +156,11 @@ struct key keys[] = {
   { 'r',       EDIT,        saveMap,      { 0 },         },
   { 'b',       GAME,        showLog,      { 0 },         },
   { 'u',       GAME,         error,    { .s = "Test" },  },
+  { 'c',   GAME | CURSOR, toggleCursor,   { 0 },         },
+  { 'w',      CURSOR,      shiftPlayer, { .p = UP    },  },
+  { 's',      CURSOR,      shiftPlayer, { .p = DOWN  },  },
+  { 'a',      CURSOR,      shiftPlayer, { .p = LEFT  },  },
+  { 'd',      CURSOR,      shiftPlayer, { .p = RIGHT },  },
 };
 
 unsigned char map[MAPAREA] = {
@@ -261,6 +268,15 @@ void toggleEdit(const union arg *arg) {
     loadMap("map1.map");
     ents[0]->at &= ~GHOST;
   }
+}
+
+void toggleCursor(const union arg *arg) {
+  TOGGLESTATE(CURSOR);
+  TOGGLESTATE(GAME);
+  if(STATEENABLED(CURSOR)) 
+    ents[0]->at |= GHOST;
+  else 
+    ents[0]->at &= ~GHOST;
 }
 
 void updateEnts() {
@@ -407,7 +423,7 @@ void deleteEnt(unsigned int i) {
 }
 
 void moveEnt(unsigned int i, unsigned int x, unsigned int y) {
-  if(ISVALID(x, y) && entAt(x, y) == -1 && (!ISSOLID(x, y) || ents[i]->at & GHOST)) {
+  if((ISVALID(x, y) && entAt(x, y) == -1 && (!ISSOLID(x, y))) || ents[i]->at & GHOST) {
     ents[i]->loc.x = x;
     ents[i]->loc.y = y;
   }
