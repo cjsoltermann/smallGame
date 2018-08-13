@@ -151,9 +151,13 @@ struct key keys[] = {
   { 'j',       GAME,      shiftCamera, { .p = LEFT  },   },
   { 'l',       GAME,      shiftCamera, { .p = RIGHT },   },
   { 'n',       GAME,         count,       { 0 },         },
-  { 'p',       GAME,       toggleEdit,    { 0 },         },
+  { 'p',    GAME | EDIT,   toggleEdit,    { 0 },         },
   { 'e',       EDIT,       placeWall,     { 0 },         },
   { 'r',       EDIT,        saveMap,      { 0 },         },
+  { 'w',       EDIT,      shiftPlayer, { .p = UP    },   },
+  { 's',       EDIT,      shiftPlayer, { .p = DOWN  },   },
+  { 'a',       EDIT,      shiftPlayer, { .p = LEFT  },   },
+  { 'd',       EDIT,      shiftPlayer, { .p = RIGHT },   },
   { 'b',       GAME,        showLog,      { 0 },         },
   { 'u',       GAME,         error,    { .s = "Test" },  },
   { 'c',   GAME | CURSOR, toggleCursor,   { 0 },         },
@@ -259,24 +263,23 @@ void placeWall(const union arg *arg) {
 }
 
 void toggleEdit(const union arg *arg) {
+  TOGGLESTATE(GAME);
   TOGGLESTATE(EDIT);
-  if(STATEENABLED(EDIT)) {
-    loadMap("custom.map");
+  if(STATEENABLED(EDIT))
     ents[0]->at |= GHOST;
-  }
-  else {
-    loadMap("map1.map");
+  else
     ents[0]->at &= ~GHOST;
-  }
 }
 
 void toggleCursor(const union arg *arg) {
   TOGGLESTATE(CURSOR);
   TOGGLESTATE(GAME);
-  if(STATEENABLED(CURSOR)) 
+  if(STATEENABLED(CURSOR)) {
     ents[0]->at |= GHOST;
-  else 
+  }
+  else {
     ents[0]->at &= ~GHOST;
+  }
 }
 
 void updateEnts() {
