@@ -275,7 +275,7 @@ void toggleCursor(const union arg *arg) {
   TOGGLESTATE(GAME);
   if(STATEENABLED(CURSOR)) {
     ents[0]->at &= ~PLAYER;
-    createEnt('@', 5, 5, PLAYER | GHOST);
+    createEnt('@', ents[0]->loc.x, ents[0]->loc.y, PLAYER | GHOST);
   }
   else {
     deleteEnt(getPlayer());
