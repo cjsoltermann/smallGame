@@ -198,7 +198,7 @@ void dogThink(unsigned int ent) {
 
 int main() {
   setup();
-  createEnt('@', 7, 7, PLAYER);
+  createCreature('@', 7, 7, PLAYER, "Christian", 10, 10, 10);
   unsigned int dog = createEnt('d', 8, 8, 0);
   setThink(dog, dogThink);
   unsigned int wolf = createEnt('w', 9, 9, 0);
@@ -244,7 +244,6 @@ void quit(const union arg *arg) {
 void shiftPlayer(const union arg *arg) {
   struct point p = arg->p;
   unsigned int player = getPlayer();
-  addToLog("%d", player);
   shiftEnt(player, p.x, p.y);
 }
 
@@ -429,7 +428,7 @@ void deleteEnt(unsigned int i) {
 }
 
 void moveEnt(unsigned int i, unsigned int x, unsigned int y) {
-  if((ISVALID(x, y) && entAt(x, y) == -1 && (!ISSOLID(x, y))) || ents[i]->at & GHOST) {
+  if((ISVALID(x, y) && !entAt(x, y) && (!ISSOLID(x, y))) || ents[i]->at & GHOST) {
     ents[i]->loc.x = x;
     ents[i]->loc.y = y;
   }
@@ -440,7 +439,7 @@ unsigned int entAt(unsigned int x, unsigned int y) {
   for(i = 0; i < MAXENTS; i++) {
     if(ents[i] && ents[i]->loc.x == x && ents[i]->loc.y == y) return i;
   }
-  return -1;
+  return 0;
 }
 
 unsigned int getPlayer() {
