@@ -260,16 +260,13 @@ void count(const union arg *arg) {
 }
 
 void placeWall(const union arg *arg) {
-  map[XYTOINDEX(ents[0]->loc.x, ents[0]->loc.y)] = WALL;
+  unsigned int player = getPlayer();
+  map[XYTOINDEX(ents[player]->loc.x, ents[player]->loc.y)] = WALL;
 }
 
 void toggleEdit(const union arg *arg) {
-  TOGGLESTATE(GAME);
+  toggleCursor(arg);
   TOGGLESTATE(EDIT);
-  if(STATEENABLED(EDIT))
-    ents[0]->at |= GHOST;
-  else
-    ents[0]->at &= ~GHOST;
 }
 
 void toggleCursor(const union arg *arg) {
