@@ -88,7 +88,8 @@ enum tileAts {
   CONNECT = 1 << 6,
 };
 enum entAts {
-  GHOST = 1 << 7,
+  GHOST =  1 << 7,
+  HIDDEN = 1 << 6,
   PLAYER = 1,
 };
 
@@ -222,6 +223,7 @@ void setup() {
   curs_set(0);
   keypad(stdscr, TRUE);
   addToLog("Setup successful!");
+  createEnt('@', 0, 0, HIDDEN);
 }
 
 void quit(const union arg *arg) {
@@ -401,7 +403,7 @@ void getSurround(int i, unsigned char *map, unsigned char *surround) {
 void drawEnts() {
   int i;
   for(i = 0; i < MAXENTS; i++)
-    if(ents[i]) mvaddch(ents[i]->loc.y - camera.y, ents[i]->loc.x - camera.x, ents[i]->c);
+    if(ents[i] && !(ents[i]->at & HIDDEN)) mvaddch(ents[i]->loc.y - camera.y, ents[i]->loc.x - camera.x, ents[i]->c);
 }
 
 unsigned int createEnt(chtype c, int x, int y, uint8_t at) {
