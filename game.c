@@ -120,6 +120,7 @@ void mainLoop();
 void quit(const union arg *arg);
 void shiftPlayer(const union arg *arg);
 void shiftCamera(const union arg *arg);
+void shiftCursor(const union arg *arg);
 void count(const union arg *arg);
 void placeWall(const union arg *arg);
 void saveMap(const union arg *arg);
@@ -150,10 +151,10 @@ struct key keys[] = {
   { 's',        GAME,               shiftPlayer, { .p = DOWN  }, 1 },
   { 'a',        GAME,               shiftPlayer, { .p = LEFT  }, 1 },
   { 'd',        GAME,               shiftPlayer, { .p = RIGHT }, 1 },
-  { 'w',   EDIT | CURSOR,           shiftPlayer, { .p = UP    },   },
-  { 's',   EDIT | CURSOR,           shiftPlayer, { .p = DOWN  },   },
-  { 'a',   EDIT | CURSOR,           shiftPlayer, { .p = LEFT  },   },
-  { 'd',   EDIT | CURSOR,           shiftPlayer, { .p = RIGHT },   },
+  { 'w',   EDIT | CURSOR,           shiftCursor, { .p = UP    },   },
+  { 's',   EDIT | CURSOR,           shiftCursor, { .p = DOWN  },   },
+  { 'a',   EDIT | CURSOR,           shiftCursor, { .p = LEFT  },   },
+  { 'd',   EDIT | CURSOR,           shiftCursor, { .p = RIGHT },   },
   { 'i',        GAME,               shiftCamera, { .p = UP    },   },
   { 'k',        GAME,               shiftCamera, { .p = DOWN  },   },
   { 'j',        GAME,               shiftCamera, { .p = LEFT  },   },
@@ -223,7 +224,7 @@ void setup() {
   curs_set(0);
   keypad(stdscr, TRUE);
   addToLog("Setup successful!");
-  createEnt('@', 0, 0, HIDDEN);
+  createEnt('@', 0, 0, HIDDEN | GHOST);
 }
 
 void quit(const union arg *arg) {
@@ -249,6 +250,11 @@ void shiftPlayer(const union arg *arg) {
   shiftEnt(player, p.x, p.y);
 }
 
+void shiftCursor(const union arg *arg) {
+  struct point p = arg->p;
+  shiftEnt(0, p.x, p.y);
+}
+
 void shiftCamera(const union arg *arg) {
   struct point p = arg->p;
   camera.x += p.x;
@@ -262,7 +268,7 @@ void count(const union arg *arg) {
 
 void placeWall(const union arg *arg) {
   unsigned int player = getPlayer();
-  map[XYTOINDEX(ents[player]->loc.x, ents[player]->loc.y)] = WALL;
+  map[XYTOINDEX(ents[0]->loc.x, ents[0]->loc.y)] = WALL;
 }
 
 void toggleEdit(const union arg *arg) {
@@ -271,17 +277,12 @@ void toggleEdit(const union arg *arg) {
 }
 
 void toggleCursor(const union arg *arg) {
-  unsigned int cursor;
   TOGGLESTATE(CURSOR);
   TOGGLESTATE(GAME);
-  if(STATEENABLED(CURSOR)) {
-    ents[0]->at &= ~PLAYER;
-    createEnt('@', ents[0]->loc.x, ents[0]->loc.y, PLAYER | GHOST);
-  }
-  else {
-    deleteEnt(getPlayer());
-    ents[0]->at |= PLAYER;
-  }
+  if(STATEENABLED(CURSOR))
+    ents[0]->at &= ~HIDDEN;
+  else
+    ents[0]->at |= HIDDEN;
 }
 
 void updateEnts() {
