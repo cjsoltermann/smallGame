@@ -114,6 +114,7 @@ void drawStatus();
 void clearStatus();
 void addToLog(char *s, ...);
 void setStatus(char *s, ...);
+void showMessage(char *s, ...);
 void setup();
 void mainLoop();
 void quit(const union arg *arg);
@@ -127,6 +128,7 @@ void toggleCursor(const union arg *arg);
 void showLog(const union arg *arg);
 void saveLog(char *file);
 void error(const union arg *arg);
+void testMessage(const union arg *arg);
 inline int wrap(int i, int n);
 
 struct tile tiles[] = {
@@ -164,6 +166,7 @@ struct key keys[] = {
   { 'b',        GAME,                 showLog,      { 0 },         },
   { 'u',         ALL,                  error,    { .s = "Test" },1 },
   { 'c',    GAME | CURSOR,          toggleCursor,   { 0 },         },
+  { 'x',        GAME,                testMessage,   { 0 },         },
 };
 
 unsigned char map[MAPAREA] = {
@@ -189,6 +192,7 @@ unsigned char map[MAPAREA] = {
   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
 char status[MESSAGELENGTH] = "test";
+char message[MESSAGELENGTH];
 char *gameLog[LOGLENGTH];
 
 void dogThink(unsigned int ent) {
@@ -300,6 +304,7 @@ void mainLoop() {
       drawMap(map);
       drawEnts();
       drawStatus();
+      *message = '\0';
       processKeys(getch());
     }
   }
@@ -506,12 +511,16 @@ void processKeys(short code){
 
 void drawStatus() {
   int i;
+  char *src;
+  if(*message != '\0')
+    src = message;
+  else
+    src = status;
   for(i = 0; i < MESSAGELENGTH; i++) {
     if(status[i] != '\0')
-      mvaddch(getmaxy(stdscr) - 1, i, status[i]);
+      mvaddch(getmaxy(stdscr) - 1, i, src[i]);
     else return;
   }
-  //mvaddstr(getmaxy(stdscr) - 1, 0, status);
 }
 
 void clearStatus() {
@@ -544,6 +553,15 @@ void setStatus(char *s, ...) {
   va_end(args);
 }
 
+void showMessage(char *s, ...) {
+  va_list args;
+  va_start(args, s);
+
+  vsnprintf(message, MESSAGELENGTH, s, args);
+
+  va_end(args);
+}
+
 void showLog(const union arg *arg) {
   int i, j;
   int y = getmaxy(stdscr) - 1;
@@ -571,6 +589,10 @@ void saveLog(char *file) {
 
 void error(const union arg *arg) {
   addToLog("Error: %s on turn %d", arg->s, turn);
+}
+
+void testMessage(const union arg *arg) {
+  showMessage("poopy butt");
 }
 
 int wrap(int i, int n) {
