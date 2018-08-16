@@ -111,7 +111,6 @@ struct creature *creatureData(unsigned int ent);
 void attack(unsigned int from, unsigned int to);
 void processKeys(short code);
 void drawStatus();
-void clearStatus();
 void addToLog(char *s, ...);
 void setStatus(char *s, ...);
 void showMessage(char *s, ...);
@@ -493,9 +492,11 @@ struct creature *creatureData(unsigned int ent) {
 
 void attack(unsigned int from, unsigned int to) {
   if (!isCreature(from) || !isCreature(to)) return;
-  creatureData(to)->health -= creatureData(from)->attack;
-  addToLog("%s was attacked by %s. Now they have %d and %d health, respectively.", creatureData(from)->name, creatureData(to)->name,
-      creatureData(from)->health, creatureData(to)->health);
+  struct creature *fromd = creatureData(from);
+  struct creature *tod = creatureData(to);
+  tod->health -= fromd->attack;
+  addToLog("%s was attacked by %s. Now they have %d and %d health, respectively.", tod->name, fromd->name,tod->health, fromd->health);
+ showMessage("%s attacked %s dealing %d points of damage", fromd->name, tod->name, fromd->attack); 
 }
 
 void processKeys(short code){
@@ -516,17 +517,11 @@ void drawStatus() {
     src = message;
   else
     src = status;
-  for(i = 0; i < MESSAGELENGTH; i++) {
-    if(status[i] != '\0')
-      mvaddch(getmaxy(stdscr) - 1, i, src[i]);
-    else return;
+  for(i = 0; i < MESSAGELENGTH && src[i] != '\0'; i++) {
+    mvaddch(getmaxy(stdscr) - 1, i, src[i]);
   }
-}
-
-void clearStatus() {
-  int i;
-  for(i = 0; i < MESSAGELENGTH; i++) {
-    status[i] = ' ';
+  for(; i < MESSAGELENGTH; i++) {
+    mvaddch(getmaxy(stdscr) - 1, i, ' ');
   }
 }
 
@@ -544,7 +539,6 @@ void addToLog(char *s, ...) {
 }
 
 void setStatus(char *s, ...) {
-  clearStatus();
   va_list args;
   va_start(args, s);
 
