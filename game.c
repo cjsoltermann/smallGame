@@ -88,7 +88,8 @@ enum tileAts {
   CONNECT = 1 << 6,
 };
 enum entAts {
-  GHOST = 1 << 7,
+  GHOST =  1 << 7,
+  HIDDEN = 1 << 6,
   PLAYER = 1,
 };
 
@@ -119,6 +120,7 @@ void mainLoop();
 void quit(const union arg *arg);
 void shiftPlayer(const union arg *arg);
 void shiftCamera(const union arg *arg);
+void shiftCursor(const union arg *arg);
 void count(const union arg *arg);
 void placeWall(const union arg *arg);
 void saveMap(const union arg *arg);
@@ -150,10 +152,10 @@ struct key keys[] = {
   { 's',        GAME,               shiftPlayer, { .p = DOWN  }, 1 },
   { 'a',        GAME,               shiftPlayer, { .p = LEFT  }, 1 },
   { 'd',        GAME,               shiftPlayer, { .p = RIGHT }, 1 },
-  { 'w',   EDIT | CURSOR,           shiftPlayer, { .p = UP    },   },
-  { 's',   EDIT | CURSOR,           shiftPlayer, { .p = DOWN  },   },
-  { 'a',   EDIT | CURSOR,           shiftPlayer, { .p = LEFT  },   },
-  { 'd',   EDIT | CURSOR,           shiftPlayer, { .p = RIGHT },   },
+  { 'w',   EDIT | CURSOR,           shiftCursor, { .p = UP    },   },
+  { 's',   EDIT | CURSOR,           shiftCursor, { .p = DOWN  },   },
+  { 'a',   EDIT | CURSOR,           shiftCursor, { .p = LEFT  },   },
+  { 'd',   EDIT | CURSOR,           shiftCursor, { .p = RIGHT },   },
   { 'i',        GAME,               shiftCamera, { .p = UP    },   },
   { 'k',        GAME,               shiftCamera, { .p = DOWN  },   },
   { 'j',        GAME,               shiftCamera, { .p = LEFT  },   },
@@ -201,7 +203,7 @@ void dogThink(unsigned int ent) {
 
 int main() {
   setup();
-  createEnt('@', 7, 7, PLAYER);
+  createCreature('@', 7, 7, PLAYER, "Christian", 10, 10, 10);
   unsigned int dog = createEnt('d', 8, 8, 0);
   setThink(dog, dogThink);
   unsigned int wolf = createEnt('w', 9, 9, 0);
@@ -225,6 +227,7 @@ void setup() {
   curs_set(0);
   keypad(stdscr, TRUE);
   addToLog("Setup successful!");
+  createEnt('@', 0, 0, HIDDEN | GHOST);
 }
 
 void quit(const union arg *arg) {
@@ -247,8 +250,12 @@ void quit(const union arg *arg) {
 void shiftPlayer(const union arg *arg) {
   struct point p = arg->p;
   unsigned int player = getPlayer();
-  addToLog("%d", player);
   shiftEnt(player, p.x, p.y);
+}
+
+void shiftCursor(const union arg *arg) {
+  struct point p = arg->p;
+  shiftEnt(0, p.x, p.y);
 }
 
 void shiftCamera(const union arg *arg) {
@@ -264,7 +271,7 @@ void count(const union arg *arg) {
 
 void placeWall(const union arg *arg) {
   unsigned int player = getPlayer();
-  map[XYTOINDEX(ents[player]->loc.x, ents[player]->loc.y)] = WALL;
+  map[XYTOINDEX(ents[0]->loc.x, ents[0]->loc.y)] = WALL;
 }
 
 void toggleEdit(const union arg *arg) {
@@ -273,17 +280,12 @@ void toggleEdit(const union arg *arg) {
 }
 
 void toggleCursor(const union arg *arg) {
-  unsigned int cursor;
   TOGGLESTATE(CURSOR);
   TOGGLESTATE(GAME);
-  if(STATEENABLED(CURSOR)) {
-    ents[0]->at &= ~PLAYER;
-    createEnt('@', 5, 5, PLAYER | GHOST);
-  }
-  else {
-    deleteEnt(getPlayer());
-    ents[0]->at |= PLAYER;
-  }
+  if(STATEENABLED(CURSOR))
+    ents[0]->at &= ~HIDDEN;
+  else
+    ents[0]->at |= HIDDEN;
 }
 
 void updateEnts() {
@@ -406,7 +408,7 @@ void getSurround(int i, unsigned char *map, unsigned char *surround) {
 void drawEnts() {
   int i;
   for(i = 0; i < MAXENTS; i++)
-    if(ents[i]) mvaddch(ents[i]->loc.y - camera.y, ents[i]->loc.x - camera.x, ents[i]->c);
+    if(ents[i] && !(ents[i]->at & HIDDEN)) mvaddch(ents[i]->loc.y - camera.y, ents[i]->loc.x - camera.x, ents[i]->c);
 }
 
 unsigned int createEnt(chtype c, int x, int y, uint8_t at) {
@@ -433,7 +435,7 @@ void deleteEnt(unsigned int i) {
 }
 
 void moveEnt(unsigned int i, unsigned int x, unsigned int y) {
-  if((ISVALID(x, y) && entAt(x, y) == -1 && (!ISSOLID(x, y))) || ents[i]->at & GHOST) {
+  if((ISVALID(x, y) && !entAt(x, y) && (!ISSOLID(x, y))) || ents[i]->at & GHOST) {
     ents[i]->loc.x = x;
     ents[i]->loc.y = y;
   }
@@ -444,7 +446,7 @@ unsigned int entAt(unsigned int x, unsigned int y) {
   for(i = 0; i < MAXENTS; i++) {
     if(ents[i] && ents[i]->loc.x == x && ents[i]->loc.y == y) return i;
   }
-  return -1;
+  return 0;
 }
 
 unsigned int getPlayer() {
