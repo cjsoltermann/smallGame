@@ -198,7 +198,26 @@ char *gameLog[LOGLENGTH];
 
 void dogThink(unsigned int ent) {
   srand(clock());
-  shiftEnt(ent, rand() % 3 - 1, rand() % 3 - 1);
+  struct point enemy = getLoc(getPlayer());
+  struct point me = getLoc(ent);
+  int v = me.y - enemy.y;
+  int h = me.x - enemy.x;
+  if(v > 0) {
+    shiftEnt(ent, 0, -1);
+    return;
+  }
+  if(v < 0) {
+    shiftEnt(ent, 0, 1);
+    return;
+  }
+  if(h > 0) {
+    shiftEnt(ent, -1, 0);
+    return;
+  }
+  if(h < 0) {
+    shiftEnt(ent, 1, 0);
+    return;
+  }
 }
 
 int main() {
