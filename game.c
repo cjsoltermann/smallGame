@@ -21,8 +21,8 @@
 
 #define LENGTH(X) (sizeof X / sizeof X[0])
 #define XYTOINDEX(X, Y) ((Y) * MAPWIDTH + (X))
-#define INDEXTOX(I) (I % MAPWIDTH)
-#define INDEXTOY(I) (I / MAPWIDTH)
+#define INDEXTOX(I) ((I) % MAPWIDTH)
+#define INDEXTOY(I) ((I) / MAPWIDTH)
 #define BITSET(B, I) ((B >> 7 - I) & 1)
 #define SETBIT(B, I) (B |= (1 << 7 - I))
 #define ISVALID(X, Y) (X < MAPWIDTH && X >= 0 && Y < MAPHEIGHT && Y >= 0)
@@ -93,7 +93,8 @@ enum entAts {
   PLAYER = 1,
 };
 
-void getSurround(int i, unsigned char *map, unsigned char *surround);
+void getMapSurround(int i, unsigned char *surround);
+void getEntSurround(int i, unsigned char *surround);
 chtype calculateWall(unsigned char *map, int i);
 void drawMap(unsigned char* map);
 void loadMap(char* file);
@@ -103,6 +104,7 @@ void drawEnts();
 void moveEnt(unsigned int i, unsigned int x, unsigned int y);
 #define shiftEnt(I, X, Y) moveEnt(I, getLoc(I).x + (X), getLoc(I).y + (Y))
 unsigned int entAt(unsigned int x, unsigned int y);
+unsigned int entIn(unsigned char *surround);
 unsigned int getPlayer();
 struct point getLoc(unsigned int ent);
 void setThink(unsigned int ent, void (*fn)(unsigned int ent));
@@ -197,39 +199,27 @@ char message[MESSAGELENGTH];
 char *gameLog[LOGLENGTH];
 
 void dogThink(unsigned int ent) {
-  srand(clock());
-  struct point enemy = getLoc(getPlayer());
-  struct point me = getLoc(ent);
-  int v = me.y - enemy.y;
-  int h = me.x - enemy.x;
-  if(v > 0) {
-    shiftEnt(ent, 0, -1);
-    return;
-  }
-  if(v < 0) {
-    shiftEnt(ent, 0, 1);
-    return;
-  }
-  if(h > 0) {
-    shiftEnt(ent, -1, 0);
-    return;
-  }
-  if(h < 0) {
-    shiftEnt(ent, 1, 0);
-    return;
-  }
+  unsigned char surround[9];
+  unsigned int nearEnt;
+  addToLog("Ent #%d generating surround", ent);
+  getEntSurround(XYTOINDEX(ents[ent]->loc.x, ents[ent]->loc.y), surround);
+  addToLog("%d%d%d", surround[0], surround[1], surround[2]);
+  addToLog("%d%d%d", surround[3], surround[4], surround[5]);
+  addToLog("%d%d%d", surround[6], surround[7], surround[8]);
+  nearEnt = entIn(surround);
+  addToLog("Found ent #%d", nearEnt);
 }
 
 int main() {
   setup();
   createCreature('@', 7, 7, PLAYER, "Christian", 10, 10, 10);
-  unsigned int dog = createEnt('d', 8, 8, 0);
+  unsigned int dog = createEnt('2', 8, 8, 0);
   setThink(dog, dogThink);
-  unsigned int wolf = createEnt('w', 9, 9, 0);
+  unsigned int wolf = createEnt('3', 9, 9, 0);
   setThink(wolf, dogThink);
-  unsigned int newDog = createCreature('D', 10, 10, 0, "Mr. Dog", 10, 10, 10);
+  unsigned int newDog = createCreature('4', 10, 10, 0, "Mr. Dog", 10, 10, 10);
   setThink(newDog, dogThink);
-  unsigned int anotherDog = createCreature('D', 10, 10, 0, "Mrs. Dog", 10, 10, 10);
+  unsigned int anotherDog = createCreature('5', 11, 11, 0, "Mrs. Dog", 10, 10, 10);
   setThink(anotherDog, dogThink);
   attack(newDog, anotherDog);
   loadMap("map1.map");
@@ -289,7 +279,6 @@ void count(const union arg *arg) {
 }
 
 void placeWall(const union arg *arg) {
-  unsigned int player = getPlayer();
   map[XYTOINDEX(ents[0]->loc.x, ents[0]->loc.y)] = WALL;
 }
 
@@ -373,7 +362,7 @@ void loadMap(char *file) {
 
 chtype calculateWall(unsigned char *map, int i) {
   unsigned char surround[9];
-  getSurround(i, map, surround);
+  getMapSurround(i, surround);
   int t = tiles[surround[1]].at & CONNECT;
   int l = tiles[surround[3]].at & CONNECT;
   int r = tiles[surround[5]].at & CONNECT;
@@ -417,10 +406,19 @@ chtype calculateWall(unsigned char *map, int i) {
   return ACS_PLUS;
 }
 
-void getSurround(int i, unsigned char *map, unsigned char *surround) {
+void getMapSurround(int i, unsigned char *surround) {
   int n, j;
   for(n = 0, j = -MAPWIDTH - 1; n < 9; n++, j = ((n / 3 - 1) * MAPWIDTH) + (n % 3 - 1)) {
     surround[n] = map[i + j];
+  }
+}
+
+void getEntSurround(int i, unsigned char *surround) {
+  int n, j;
+  unsigned int ent;
+  for(n = 0, j = -MAPWIDTH - 1; n < 9; n++, j = ((n / 3 - 1) * MAPWIDTH) + (n % 3 - 1)) {
+    ent = entAt(INDEXTOX(i + j), INDEXTOY(i + j));
+    surround[n] = ent;
   }
 }
 
@@ -466,6 +464,14 @@ unsigned int entAt(unsigned int x, unsigned int y) {
     if(ents[i] && ents[i]->loc.x == x && ents[i]->loc.y == y) return i;
   }
   return 0;
+}
+
+unsigned int entIn(unsigned char *surround) {
+  int i;
+  for(i = 0; i < 9 && surround[i] == 0; i++) {
+    if(i == 4) i++;
+  };
+  return surround[i];
 }
 
 unsigned int getPlayer() {
