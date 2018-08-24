@@ -199,6 +199,7 @@ char message[MESSAGELENGTH];
 char *gameLog[LOGLENGTH];
 
 void dogThink(unsigned int ent) {
+  int i;
   unsigned char surround[9];
   unsigned int nearEnt;
   addToLog("Ent #%d generating surround", ent);
@@ -206,20 +207,21 @@ void dogThink(unsigned int ent) {
   addToLog("%d%d%d", surround[0], surround[1], surround[2]);
   addToLog("%d%d%d", surround[3], surround[4], surround[5]);
   addToLog("%d%d%d", surround[6], surround[7], surround[8]);
-  nearEnt = entIn(surround);
-  addToLog("Found ent #%d", nearEnt);
+  for(i = 0; i < 9; i++) {
+    nearEnt = entIn(surround);
+    if(ents[nearEnt]->at & PLAYER) {
+      attack(ent, nearEnt);
+      break;
+    }
+  }
 }
 
 int main() {
   setup();
   createCreature('@', 7, 7, PLAYER, "Christian", 10, 10, 10);
-  unsigned int dog = createEnt('2', 8, 8, 0);
-  setThink(dog, dogThink);
-  unsigned int wolf = createEnt('3', 9, 9, 0);
-  setThink(wolf, dogThink);
-  unsigned int newDog = createCreature('4', 10, 10, 0, "Mr. Dog", 10, 10, 10);
+  unsigned int newDog = createCreature('1', 10, 10, 0, "Mr. Dog", 10, 10, 10);
   setThink(newDog, dogThink);
-  unsigned int anotherDog = createCreature('5', 11, 11, 0, "Mrs. Dog", 10, 10, 10);
+  unsigned int anotherDog = createCreature('2', 11, 11, 0, "Mrs. Dog", 10, 10, 10);
   setThink(anotherDog, dogThink);
   attack(newDog, anotherDog);
   loadMap("map1.map");
@@ -467,11 +469,15 @@ unsigned int entAt(unsigned int x, unsigned int y) {
 }
 
 unsigned int entIn(unsigned char *surround) {
-  int i;
-  for(i = 0; i < 9 && surround[i] == 0; i++) {
+  static int i;
+  static unsigned char *lastSurround = 0;
+  if(lastSurround != surround) i = 0;
+  lastSurround = surround;
+  for(i = 0; i < 10; i++) {
     if(i == 4) i++;
+    if(surround[i] != 0) return surround[i];
   };
-  return surround[i];
+  return 0;
 }
 
 unsigned int getPlayer() {
