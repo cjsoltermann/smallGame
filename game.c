@@ -104,7 +104,6 @@ void drawEnts();
 void moveEnt(unsigned int i, unsigned int x, unsigned int y);
 #define shiftEnt(I, X, Y) moveEnt(I, getLoc(I).x + (X), getLoc(I).y + (Y))
 unsigned int entAt(unsigned int x, unsigned int y);
-unsigned int entIn(unsigned char *surround);
 unsigned int getPlayer();
 struct point getLoc(unsigned int ent);
 void setThink(unsigned int ent, void (*fn)(unsigned int ent));
@@ -201,17 +200,14 @@ char *gameLog[LOGLENGTH];
 void dogThink(unsigned int ent) {
   int i;
   unsigned char surround[9];
-  unsigned int nearEnt;
   addToLog("Ent #%d generating surround", ent);
   getEntSurround(XYTOINDEX(ents[ent]->loc.x, ents[ent]->loc.y), surround);
   addToLog("%d%d%d", surround[0], surround[1], surround[2]);
   addToLog("%d%d%d", surround[3], surround[4], surround[5]);
   addToLog("%d%d%d", surround[6], surround[7], surround[8]);
   for(i = 0; i < 9; i++) {
-    nearEnt = entIn(surround);
-    if(ents[nearEnt]->at & PLAYER) {
-      attack(ent, nearEnt);
-      break;
+    if(ents[surround[i]]->at & PLAYER) {
+      attack(ent, surround[i]);
     }
   }
 }
@@ -219,9 +215,9 @@ void dogThink(unsigned int ent) {
 int main() {
   setup();
   createCreature('@', 7, 7, PLAYER, "Christian", 10, 10, 10);
-  unsigned int newDog = createCreature('1', 10, 10, 0, "Mr. Dog", 10, 10, 10);
+  unsigned int newDog = createCreature('D', 10, 10, 0, "Mr. Dog", 10, 10, 10);
   setThink(newDog, dogThink);
-  unsigned int anotherDog = createCreature('2', 11, 11, 0, "Mrs. Dog", 10, 10, 10);
+  unsigned int anotherDog = createCreature('d', 11, 11, 0, "Mrs. Dog", 10, 10, 10);
   setThink(anotherDog, dogThink);
   attack(newDog, anotherDog);
   loadMap("map1.map");
@@ -465,18 +461,6 @@ unsigned int entAt(unsigned int x, unsigned int y) {
   for(i = 0; i < MAXENTS; i++) {
     if(ents[i] && ents[i]->loc.x == x && ents[i]->loc.y == y) return i;
   }
-  return 0;
-}
-
-unsigned int entIn(unsigned char *surround) {
-  static int i;
-  static unsigned char *lastSurround = 0;
-  if(lastSurround != surround) i = 0;
-  lastSurround = surround;
-  for(i = 0; i < 10; i++) {
-    if(i == 4) i++;
-    if(surround[i] != 0) return surround[i];
-  };
   return 0;
 }
 
