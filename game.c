@@ -131,6 +131,7 @@ void showLog(const union arg *arg);
 void saveLog(char *file);
 void error(const union arg *arg);
 void testMessage(const union arg *arg);
+void printCreature(const union arg *arg);
 inline int wrap(int i, int n);
 
 struct tile tiles[] = {
@@ -147,28 +148,29 @@ struct point camera = {0, 0};
 int turn;
 
 struct key keys[] = {
-  //key        mode                 function        arg        cost
-  { 'q',        ALL,                   quit,        { 0 }          },
-  { 'w',        GAME,               shiftPlayer, { .p = UP    }, 1 },
-  { 's',        GAME,               shiftPlayer, { .p = DOWN  }, 1 },
-  { 'a',        GAME,               shiftPlayer, { .p = LEFT  }, 1 },
-  { 'd',        GAME,               shiftPlayer, { .p = RIGHT }, 1 },
-  { 'w',    EDIT | CURSOR,          shiftCursor, { .p = UP    },   },
-  { 's',    EDIT | CURSOR,          shiftCursor, { .p = DOWN  },   },
-  { 'a',    EDIT | CURSOR,          shiftCursor, { .p = LEFT  },   },
-  { 'd',    EDIT | CURSOR,          shiftCursor, { .p = RIGHT },   },
-  { 'i',        GAME,               shiftCamera, { .p = UP    },   },
-  { 'k',        GAME,               shiftCamera, { .p = DOWN  },   },
-  { 'j',        GAME,               shiftCamera, { .p = LEFT  },   },
-  { 'l',        GAME,               shiftCamera, { .p = RIGHT },   },
-  { 'n',        GAME,                  count,       { 0 },         },
-  { 'p',     GAME | EDIT,            toggleEdit,    { 0 },         },
-  { 'e',        EDIT,                placeWall,     { 0 },         },
-  { 'r',        EDIT,                 saveMap,      { 0 },         },
-  { 'b',        GAME,                 showLog,      { 0 },         },
-  { 'u',         ALL,                  error,    { .s = "Test" },1 },
-  { 'c',    GAME | CURSOR,          toggleCursor,   { 0 },         },
-  { 'x',        GAME,                testMessage,   { 0 },         },
+  //key     mode              function          arg              cost
+  { 'q',    ALL,              quit,             { 0           }          },
+  { 'w',    GAME,             shiftPlayer,      { .p = UP     }, 1 },
+  { 's',    GAME,             shiftPlayer,      { .p = DOWN   }, 1 },
+  { 'a',    GAME,             shiftPlayer,      { .p = LEFT   }, 1 },
+  { 'd',    GAME,             shiftPlayer,      { .p = RIGHT  }, 1 },
+  { 'w',    EDIT | CURSOR,    shiftCursor,      { .p = UP     },   },
+  { 's',    EDIT | CURSOR,    shiftCursor,      { .p = DOWN   },   },
+  { 'a',    EDIT | CURSOR,    shiftCursor,      { .p = LEFT   },   },
+  { 'd',    EDIT | CURSOR,    shiftCursor,      { .p = RIGHT  },   },
+  { 'i',    GAME,             shiftCamera,      { .p = UP     },   },
+  { 'k',    GAME,             shiftCamera,      { .p = DOWN   },   },
+  { 'j',    GAME,             shiftCamera,      { .p = LEFT   },   },
+  { 'l',    GAME,             shiftCamera,      { .p = RIGHT  },   },
+  { 'n',    GAME,             count,            { 0           },   },
+  { 'p',    GAME | EDIT,      toggleEdit,       { 0           },   },
+  { 'e',    EDIT,             placeWall,        { 0           },   },
+  { 'r',    EDIT,             saveMap,          { 0           },   },
+  { 'b',    GAME,             showLog,          { 0           },   },
+  { 'u',    ALL,              error,            { .s = "Test" }, 1 },
+  { 'c',    GAME | CURSOR,    toggleCursor,     { 0           },   },
+  { 'x',    CURSOR,           printCreature,    { 0           },   },
+  { 'x',    GAME,             testMessage,      { 0           },   },
 };
 
 unsigned char map[MAPAREA] = {
@@ -458,7 +460,7 @@ void moveEnt(unsigned int i, unsigned int x, unsigned int y) {
 
 unsigned int entAt(unsigned int x, unsigned int y) {
   int i;
-  for(i = 0; i < MAXENTS; i++) {
+  for(i = 1; i < MAXENTS; i++) {
     if(ents[i] && ents[i]->loc.x == x && ents[i]->loc.y == y) return i;
   }
   return 0;
@@ -604,6 +606,13 @@ void error(const union arg *arg) {
 
 void testMessage(const union arg *arg) {
   showMessage("poopy butt");
+}
+
+void printCreature(const union arg *arg) {
+  unsigned int ent;
+  struct creature *creature;
+  if ((ent = entAt(ents[0]->loc.x, ents[0]->loc.y)) && (creature = creatureData(ent)))
+    showMessage("%s has %d health", creature->name, creature->health);
 }
 
 int wrap(int i, int n) {
