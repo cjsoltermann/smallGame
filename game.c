@@ -514,7 +514,7 @@ void attack(unsigned int from, unsigned int to) {
   struct creature *tod = creatureData(to);
   tod->health -= fromd->attack;
   addToLog("%s was attacked by %s. Now they have %d and %d health, respectively.", tod->name, fromd->name,tod->health, fromd->health);
- showMessage("%s attacked %s dealing %d points of damage", fromd->name, tod->name, fromd->attack); 
+  showMessage("%s attacked %s dealing %d points of damage", fromd->name, tod->name, fromd->attack); 
 }
 
 void processKeys(short code){
