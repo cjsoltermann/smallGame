@@ -221,7 +221,6 @@ int main() {
   setThink(newDog, dogThink);
   unsigned int anotherDog = createCreature('d', 11, 11, 0, "Mrs. Dog", 10, 10, 10);
   setThink(anotherDog, dogThink);
-  attack(newDog, anotherDog);
   loadMap("map1.map");
   mainLoop();
   endwin();
