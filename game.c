@@ -11,7 +11,7 @@
 #define MAXENTS 400
 #define WALLCHAR '\5'
 #define LOGLENGTH 1000
-#define MESSAGELENGTH 100
+#define MESSAGELENGTH 150
 #define NAMELENGTH 50
 
 #define UP {0, -1}
@@ -118,6 +118,8 @@ void setStatus(char *s, ...);
 void showMessage(char *s, ...);
 void setup();
 void mainLoop();
+void updateEnt(unsigned int ent);
+void updateEnts();
 void quit(const union arg *arg);
 void shiftPlayer(const union arg *arg);
 void shiftCamera(const union arg *arg);
@@ -199,9 +201,19 @@ char status[MESSAGELENGTH] = "test";
 char message[MESSAGELENGTH];
 char *gameLog[LOGLENGTH];
 
+void baseThink(unsigned int ent) {
+  struct creature *data;
+  if ((data = creatureData(ent)) && !(data->health > 0)) {
+    deleteEnt(ent);
+    showMessage("YOU DIED");
+    return;
+  }
+}
+
 void dogThink(unsigned int ent) {
   int i;
   unsigned char surround[9];
+  baseThink(ent);
   addToLog("Ent #%d generating surround", ent);
   getEntSurround(XYTOINDEX(ents[ent]->loc.x, ents[ent]->loc.y), surround);
   addToLog("%d%d%d", surround[0], surround[1], surround[2]);
@@ -216,12 +228,14 @@ void dogThink(unsigned int ent) {
 
 int main() {
   setup();
-  createCreature('@', 7, 7, PLAYER, "Christian", 10, 10, 10);
+  unsigned int player = createCreature('@', 7, 7, PLAYER, "Christian", 10, 10, 10);
+  setThink(player, baseThink);
   unsigned int newDog = createCreature('D', 10, 10, 0, "Mr. Dog", 10, 10, 10);
   setThink(newDog, dogThink);
   unsigned int anotherDog = createCreature('d', 11, 11, 0, "Mrs. Dog", 10, 10, 10);
   setThink(anotherDog, dogThink);
   loadMap("map1.map");
+  srand(time(NULL));
   mainLoop();
   endwin();
 }
@@ -295,10 +309,14 @@ void toggleCursor(const union arg *arg) {
     ents[0]->at |= HIDDEN;
 }
 
+void updateEnt(unsigned int ent) {
+  if(ents[ent] && ents[ent]->think) ents[ent]->think(ent);
+}
+
 void updateEnts() {
   int i;
   for(i = 0; i < MAXENTS; i++) {
-    if(ents[i] && ents[i]->think) ents[i]->think(i);
+    updateEnt(i);
   }
 }
 
@@ -446,6 +464,9 @@ unsigned int createEnt(chtype c, int x, int y, uint8_t at) {
 }
 
 void deleteEnt(unsigned int i) {
+  struct creature *data;
+  if ((data = creatureData(i)))
+    free(data);
   free(ents[i]);
   ents[i] = NULL;
 }
@@ -509,12 +530,15 @@ struct creature *creatureData(unsigned int ent) {
 }
 
 void attack(unsigned int from, unsigned int to) {
+  int attack;
   if (!isCreature(from) || !isCreature(to)) return;
   struct creature *fromd = creatureData(from);
   struct creature *tod = creatureData(to);
-  tod->health -= fromd->attack;
-  addToLog("%s was attacked by %s. Now they have %d and %d health, respectively.", tod->name, fromd->name,tod->health, fromd->health);
-  showMessage("%s attacked %s dealing %d points of damage", fromd->name, tod->name, fromd->attack); 
+  attack = RANDRANGE(0, fromd->attack);
+  tod->health -= attack;
+  addToLog("%s was attacked by %s dealing %d points of damage. Now they have %d and %d health, respectively.", tod->name, fromd->name, attack, tod->health, fromd->health);
+  showMessage("%s attacked %s dealing %d points of damage", fromd->name, tod->name, attack); 
+  updateEnt(to);
 }
 
 void processKeys(short code){
