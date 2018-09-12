@@ -124,6 +124,7 @@ void quit(const union arg *arg);
 void shiftPlayer(const union arg *arg);
 void shiftCamera(const union arg *arg);
 void shiftCursor(const union arg *arg);
+void playerAttack(const union arg *arg);
 void count(const union arg *arg);
 void placeWall(const union arg *arg);
 void saveMap(const union arg *arg);
@@ -270,6 +271,7 @@ void quit(const union arg *arg) {
 }
 
 void shiftPlayer(const union arg *arg) {
+  playerAttack(arg);
   struct point p = arg->p;
   unsigned int player = getPlayer();
   shiftEnt(player, p.x, p.y);
@@ -284,6 +286,19 @@ void shiftCamera(const union arg *arg) {
   struct point p = arg->p;
   camera.x += p.x;
   camera.y += p.y;
+}
+
+void playerAttack(const union arg *arg) {
+  struct point p, loc;
+  unsigned int player, ent;
+  int x, y;
+  p = arg->p;
+  player = getPlayer();
+  loc = getLoc(player);
+  x = loc.x + p.x;
+  y = loc.y + p.y;
+  if ((ent = entAt(x,y)))
+    attack(player,ent);
 }
 
 void count(const union arg *arg) {
