@@ -104,6 +104,7 @@ void drawEnts();
 void moveEnt(unsigned int i, unsigned int x, unsigned int y);
 #define shiftEnt(I, X, Y) moveEnt(I, getLoc(I).x + (X), getLoc(I).y + (Y))
 unsigned int entAt(unsigned int x, unsigned int y);
+int entDead(unsigned int ent);
 unsigned int getPlayer();
 struct point getLoc(unsigned int ent);
 void setThink(unsigned int ent, void (*fn)(unsigned int ent));
@@ -203,8 +204,7 @@ char message[MESSAGELENGTH];
 char *gameLog[LOGLENGTH];
 
 void baseThink(unsigned int ent) {
-  struct creature *data;
-  if ((data = creatureData(ent)) && !(data->health > 0)) {
+  if (entDead(ent)) {
     deleteEnt(ent);
     showMessage("YOU DIED");
     return;
@@ -215,6 +215,8 @@ void dogThink(unsigned int ent) {
   int i;
   unsigned char surround[9];
   baseThink(ent);
+  if (entDead(ent))
+    return;
   addToLog("Ent #%d generating surround", ent);
   getEntSurround(XYTOINDEX(ents[ent]->loc.x, ents[ent]->loc.y), surround);
   addToLog("%d%d%d", surround[0], surround[1], surround[2]);
@@ -223,13 +225,14 @@ void dogThink(unsigned int ent) {
   for(i = 0; i < 9; i++) {
     if(ents[surround[i]]->at & PLAYER) {
       attack(ent, surround[i]);
+      return;
     }
   }
 }
 
 int main() {
   setup();
-  unsigned int player = createCreature('@', 7, 7, PLAYER, "Christian", 10, 10, 10);
+  unsigned int player = createCreature('@', 7, 7, PLAYER, "Christian", 50, 10, 10);
   setThink(player, baseThink);
   unsigned int newDog = createCreature('D', 10, 10, 0, "Mr. Dog", 10, 10, 10);
   setThink(newDog, dogThink);
@@ -499,6 +502,16 @@ unsigned int entAt(unsigned int x, unsigned int y) {
     if(ents[i] && ents[i]->loc.x == x && ents[i]->loc.y == y) return i;
   }
   return 0;
+}
+
+int entDead(unsigned int ent) {
+  struct creature *data;
+  if (ents[ent]) {
+    if ((data = creatureData(ent)) && !(data->health > 0))
+      return 2;
+    return 0;
+  }
+  return 1;
 }
 
 unsigned int getPlayer() {
