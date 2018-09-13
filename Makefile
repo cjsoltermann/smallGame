@@ -1,5 +1,5 @@
 all:
-	gcc -ggdb3 -Wall -lncurses game.c
+	gcc -ggdb3 -Wall -lncurses -std=c99 game.c
 
 run:
 	./a.out

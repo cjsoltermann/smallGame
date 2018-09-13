@@ -5,6 +5,9 @@
 #include <time.h>
 #include <stdarg.h>
 
+#define VERBOSELOG 0
+#define SHOWTURN 1
+
 #define MAPWIDTH 20
 #define MAPHEIGHT 20
 #define MAPAREA MAPWIDTH * MAPHEIGHT
@@ -81,6 +84,7 @@ enum states {
   GAME =    1 << 7,
   CURSOR =  1 << 6,
   EDIT =    1 << 5,
+  DEAD =    1 << 0,
   ALL =     255,
 };
 enum tileAts {
@@ -203,25 +207,18 @@ char status[MESSAGELENGTH] = "test";
 char message[MESSAGELENGTH];
 char *gameLog[LOGLENGTH];
 
-void baseThink(unsigned int ent) {
-  if (entDead(ent)) {
-    deleteEnt(ent);
-    showMessage("YOU DIED");
-    return;
-  }
-}
-
 void dogThink(unsigned int ent) {
   int i;
   unsigned char surround[9];
-  baseThink(ent);
   if (entDead(ent))
     return;
-  addToLog("Ent #%d generating surround", ent);
   getEntSurround(XYTOINDEX(ents[ent]->loc.x, ents[ent]->loc.y), surround);
+#if VERBOSELOG
+  addToLog("Ent #%d generating surround", ent);
   addToLog("%d%d%d", surround[0], surround[1], surround[2]);
   addToLog("%d%d%d", surround[3], surround[4], surround[5]);
   addToLog("%d%d%d", surround[6], surround[7], surround[8]);
+#endif
   for(i = 0; i < 9; i++) {
     if(ents[surround[i]]->at & PLAYER) {
       attack(ent, surround[i]);
@@ -232,8 +229,7 @@ void dogThink(unsigned int ent) {
 
 int main() {
   setup();
-  unsigned int player = createCreature('@', 7, 7, PLAYER, "Christian", 50, 10, 10);
-  setThink(player, baseThink);
+  createCreature('@', 7, 7, PLAYER, "Christian", 50, 10, 10);
   unsigned int newDog = createCreature('D', 10, 10, 0, "Mr. Dog", 10, 10, 10);
   setThink(newDog, dogThink);
   unsigned int anotherDog = createCreature('d', 11, 11, 0, "Mrs. Dog", 10, 10, 10);
@@ -349,6 +345,9 @@ void mainLoop() {
       drawEnts();
       drawStatus();
       *message = '\0';
+#if SHOWTURN
+      setStatus("%d", turn);
+#endif
       processKeys(getch());
     }
   }
@@ -566,7 +565,8 @@ void attack(unsigned int from, unsigned int to) {
   tod->health -= attack;
   addToLog("%s was attacked by %s dealing %d points of damage. Now they have %d and %d health, respectively.", tod->name, fromd->name, attack, tod->health, fromd->health);
   showMessage("%s attacked %s dealing %d points of damage", fromd->name, tod->name, attack); 
-  updateEnt(to);
+  if(entDead(to))
+    deleteEnt(to);
 }
 
 void processKeys(short code){
@@ -582,17 +582,17 @@ void processKeys(short code){
 
 void drawStatus() {
   int i;
-  char *src;
-  if(*message != '\0')
-    src = message;
-  else
-    src = status;
-  for(i = 0; i < MESSAGELENGTH && src[i] != '\0'; i++) {
-    mvaddch(getmaxy(stdscr) - 1, i, src[i]);
-  }
-  for(; i < MESSAGELENGTH; i++) {
+
+  for(i = 0; i < MESSAGELENGTH && status[i] != '\0'; i++)
+    mvaddch(getmaxy(stdscr) - 1, i, status[i]);
+
+  for(; i < MESSAGELENGTH; i++)
     mvaddch(getmaxy(stdscr) - 1, i, ' ');
-  }
+
+  for(i = 0; i < MESSAGELENGTH && message[i] != '\0'; i++)
+    mvaddch(getmaxy(stdscr) - 2, i, message[i]);
+  for(; i < MESSAGELENGTH; i++)
+    mvaddch(getmaxy(stdscr) - 2, i, ' ');
 }
 
 void addToLog(char *s, ...) {
