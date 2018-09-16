@@ -365,7 +365,8 @@ void mainLoop() {
       drawMap(map);
       drawEnts();
       drawStatus();
-      *message = '\0';
+      free(*gameLog);
+      *gameLog = NULL;
 #if SHOWTURN
       setStatus("%d", turn);
 #endif
@@ -602,17 +603,23 @@ void processKeys(short code){
 }
 
 void drawStatus() {
-  int i, j, y;
+  int i, j, y, max;
+
+  max = getmaxy(stdscr);
 
   for(i = 0; i < MESSAGELENGTH && status[i] != '\0'; i++)
-    mvaddch(getmaxy(stdscr) - 1, i, status[i]);
+    mvaddch(max - 1, i, status[i]);
 
   for(; i < MESSAGELENGTH; i++)
-    mvaddch(getmaxy(stdscr) - 1, i, ' ');
+    mvaddch(max - 1, i, ' ');
 
   for(j = 0; j < LOGLENGTH && gameLog[j + 1]; j++);
-  for(y = getmaxy(stdscr) - 2; y > 0 && gameLog[wrap(j, LOGLENGTH)]; y--, j--) {
+  for(y = max - 2; y > max - 6 && gameLog[wrap(j, LOGLENGTH)]; y--, j--) {
     mvaddstr(y, 0, gameLog[wrap(j, LOGLENGTH)]);
+  }
+  for(; y > max - 6; y--) {
+    for(i = 0; i < MESSAGELENGTH; i++)
+      mvaddch(y, i, ' ');
   }
 }
 
@@ -648,9 +655,6 @@ void showMessage(char *s, ...) {
   va_list args;
   va_start(args, s);
   vsnprintf(gameLog[i], MESSAGELENGTH, s, args);
-  va_end(args);
-  va_start(args, s);
-  vsnprintf(message, MESSAGELENGTH, s, args);
   va_end(args);
 }
 
