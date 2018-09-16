@@ -602,7 +602,7 @@ void processKeys(short code){
 }
 
 void drawStatus() {
-  int i;
+  int i, j, y;
 
   for(i = 0; i < MESSAGELENGTH && status[i] != '\0'; i++)
     mvaddch(getmaxy(stdscr) - 1, i, status[i]);
@@ -610,10 +610,10 @@ void drawStatus() {
   for(; i < MESSAGELENGTH; i++)
     mvaddch(getmaxy(stdscr) - 1, i, ' ');
 
-  for(i = 0; i < MESSAGELENGTH && message[i] != '\0'; i++)
-    mvaddch(getmaxy(stdscr) - 2, i, message[i]);
-  for(; i < MESSAGELENGTH; i++)
-    mvaddch(getmaxy(stdscr) - 2, i, ' ');
+  for(j = 0; j < LOGLENGTH && gameLog[j + 1]; j++);
+  for(y = getmaxy(stdscr) - 2; y > 0 && gameLog[wrap(j, LOGLENGTH)]; y--, j--) {
+    mvaddstr(y, 0, gameLog[wrap(j, LOGLENGTH)]);
+  }
 }
 
 void addToLog(char *s, ...) {
