@@ -205,13 +205,12 @@ unsigned char map[MAPAREA] = {
 
 char status[MESSAGELENGTH] = "test";
 char message[MESSAGELENGTH];
+char *debugLog[LOGLENGTH];
 char *gameLog[LOGLENGTH];
 
-void dogThink(unsigned int ent) {
+int nearAttack(unsigned int ent) {
   int i;
   unsigned char surround[9];
-  if (entDead(ent))
-    return;
   getEntSurround(XYTOINDEX(ents[ent]->loc.x, ents[ent]->loc.y), surround);
 #if VERBOSELOG
   addToLog("Ent #%d generating surround", ent);
@@ -222,8 +221,30 @@ void dogThink(unsigned int ent) {
   for(i = 0; i < 9; i++) {
     if(ents[surround[i]]->at & PLAYER) {
       attack(ent, surround[i]);
-      return;
+      return 1;
     }
+  }
+  return 0;
+}
+
+void dogThink(unsigned int ent) {
+  int direction;
+  if (nearAttack(ent))
+    return;
+  direction = RANDRANGE(1,5);
+  switch (direction) {
+    case 1:
+      shiftEnt(ent, 0, -1);
+      break;
+    case 2:
+      shiftEnt(ent, 0, 1);
+      break;
+    case 3:
+      shiftEnt(ent, -1, 0);
+      break;
+    case 4:
+      shiftEnt(ent, 1, 0);
+      break;
   }
 }
 
@@ -265,7 +286,7 @@ void quit(const union arg *arg) {
   addToLog("Saving log...");
   saveLog("log");
   for(i = 0; i < LOGLENGTH; i++)
-    free(gameLog[i]);
+    free(debugLog[i]);
   exit(0);
 }
 
@@ -563,7 +584,7 @@ void attack(unsigned int from, unsigned int to) {
   struct creature *tod = creatureData(to);
   attack = RANDRANGE(0, fromd->attack);
   tod->health -= attack;
-  addToLog("%s was attacked by %s dealing %d points of damage. Now they have %d and %d health, respectively.", tod->name, fromd->name, attack, tod->health, fromd->health);
+  addToLog("Attack: %s(%d) -> %s(%d): %d damage", fromd->name, from, tod->name, to, attack);
   showMessage("%s attacked %s dealing %d points of damage", fromd->name, tod->name, attack); 
   if(entDead(to))
     deleteEnt(to);
@@ -597,14 +618,14 @@ void drawStatus() {
 
 void addToLog(char *s, ...) {
   int i;
-  for(i = 0; i < LOGLENGTH && gameLog[i] != NULL; i++);
-  free(gameLog[(i + 1) % LOGLENGTH]);
-  gameLog[(i + 1) % LOGLENGTH] = NULL;
-  gameLog[i] = malloc(MESSAGELENGTH);
+  for(i = 0; i < LOGLENGTH && debugLog[i] != NULL; i++);
+  free(debugLog[(i + 1) % LOGLENGTH]);
+  debugLog[(i + 1) % LOGLENGTH] = NULL;
+  debugLog[i] = malloc(MESSAGELENGTH);
 
   va_list args;
   va_start(args, s);
-  vsnprintf(gameLog[i], MESSAGELENGTH, s, args);
+  vsnprintf(debugLog[i], MESSAGELENGTH, s, args);
   va_end(args);
 }
 
@@ -618,11 +639,18 @@ void setStatus(char *s, ...) {
 }
 
 void showMessage(char *s, ...) {
+  int i;
+  for(i = 0; i < LOGLENGTH && gameLog[i] != NULL; i++);
+  free(gameLog[(i + 1) % LOGLENGTH]);
+  gameLog[(i + 1) % LOGLENGTH] = NULL;
+  gameLog[i] = malloc(MESSAGELENGTH);
+
   va_list args;
   va_start(args, s);
-
+  vsnprintf(gameLog[i], MESSAGELENGTH, s, args);
+  va_end(args);
+  va_start(args, s);
   vsnprintf(message, MESSAGELENGTH, s, args);
-
   va_end(args);
 }
 
@@ -631,9 +659,9 @@ void showLog(const union arg *arg) {
   int y = getmaxy(stdscr) - 1;
   erase();
 
-  for(i = 0; i < LOGLENGTH && gameLog[i + 1] != NULL; i++);
-  for(j = y; j > 0 && gameLog[wrap(i, LOGLENGTH)] != NULL; i--, j--) {
-    mvaddstr(j, 0, gameLog[wrap(i, LOGLENGTH)]);
+  for(i = 0; i < LOGLENGTH && debugLog[i + 1] != NULL; i++);
+  for(j = y; j > 0 && debugLog[wrap(i, LOGLENGTH)] != NULL; i--, j--) {
+    mvaddstr(j, 0, debugLog[wrap(i, LOGLENGTH)]);
   }
 
   getch();
@@ -644,8 +672,8 @@ void saveLog(char *file) {
   int i;
   FILE *f = fopen(file, "w");
   for(i = 0; i < LOGLENGTH; i++) {
-    if(gameLog[i]) {
-      fputs(gameLog[i], f);
+    if(debugLog[i]) {
+      fputs(debugLog[i], f);
       fputc('\n', f);
     }
   }
