@@ -605,8 +605,7 @@ void processKeys(short code){
 void drawStatus() {
   int i, j, y, maxy, maxx;
 
-  maxy = getmaxy(stdscr);
-  maxx = getmaxx(stdscr);
+  getmaxyx(stdscr, maxy, maxx);
 
   for(i = 0; i < MESSAGELENGTH && status[i] != '\0'; i++)
     mvaddch(maxy - 1, i, status[i]);
