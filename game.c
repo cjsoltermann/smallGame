@@ -323,7 +323,7 @@ void playerAttack(const union arg *arg) {
 
 void count(const union arg *arg) {
   static int counter;
-  setStatus("You've pressed that button %d times!", counter++);
+  showMessage("You've pressed that button %d times!", counter++);
 }
 
 void placeWall(const union arg *arg) {
@@ -603,21 +603,24 @@ void processKeys(short code){
 }
 
 void drawStatus() {
-  int i, j, y, max;
+  int i, j, y, maxy, maxx;
 
-  max = getmaxy(stdscr);
+  maxy = getmaxy(stdscr);
+  maxx = getmaxx(stdscr);
 
   for(i = 0; i < MESSAGELENGTH && status[i] != '\0'; i++)
-    mvaddch(max - 1, i, status[i]);
+    mvaddch(maxy - 1, i, status[i]);
 
   for(; i < MESSAGELENGTH; i++)
-    mvaddch(max - 1, i, ' ');
+    mvaddch(maxy - 1, i, ' ');
 
   for(j = 0; j < LOGLENGTH && gameLog[j + 1]; j++);
-  for(y = max - 2; y > max - 6 && gameLog[wrap(j, LOGLENGTH)]; y--, j--) {
+  for(y = maxy - 2; y > maxy - 6 && gameLog[wrap(j, LOGLENGTH)]; y--, j--) {
+    for(i = 0; i < maxx; i++)
+      mvaddch(y, i, ' ');
     mvaddstr(y, 0, gameLog[wrap(j, LOGLENGTH)]);
   }
-  for(; y > max - 6; y--) {
+  for(; y > maxy - 6; y--) {
     for(i = 0; i < MESSAGELENGTH; i++)
       mvaddch(y, i, ' ');
   }
