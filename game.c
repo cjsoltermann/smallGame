@@ -364,12 +364,12 @@ void mainLoop() {
     while(turn == lastTurn) {
       drawMap(map);
       drawEnts();
+#if SHOWTURN
+      showMessage("Turn: %d", turn);
+#endif
       drawStatus();
       free(*gameLog);
       *gameLog = NULL;
-#if SHOWTURN
-      setStatus("%d", turn);
-#endif
       processKeys(getch());
     }
   }
