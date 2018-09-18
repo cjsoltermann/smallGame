@@ -205,7 +205,7 @@ unsigned char map[MAPAREA] = {
   0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
-char status[MESSAGELENGTH] = "test %s";
+char status[MESSAGELENGTH] = "Health: %h";
 char message[MESSAGELENGTH];
 char *debugLog[LOGLENGTH];
 char *gameLog[LOGLENGTH];
@@ -606,13 +606,21 @@ void processKeys(short code){
 }
 
 void parseStatus(char *dest, const char *src) {
-  int i, j;
+  unsigned int i, j, player;
+  struct creature *data;
+
+  player = getPlayer();
+  data = creatureData(player);
 
   for(i = 0, j = 0; i < MESSAGELENGTH && j < MESSAGELENGTH && src[i] != '\0'; i++, j++) {
     if(src[i] == '%') {
       if(src[++i] == '\0') return;
       if(src[i] == 's') {
         snprintf(dest + j, MESSAGELENGTH - j, "%d", turn);
+        break;
+      }
+      if(src[i] == 'h') {
+        snprintf(dest + j, MESSAGELENGTH - j, "%d", data->health);
         break;
       }
       dest[j] = '%';
