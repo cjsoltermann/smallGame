@@ -2,6 +2,7 @@
 #include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <stdarg.h>
 
@@ -118,8 +119,9 @@ struct creature *creatureData(unsigned int ent);
 void attack(unsigned int from, unsigned int to);
 void processKeys(short code);
 void drawStatus();
+void drawMessages();
 void addToLog(char *s, ...);
-void setStatus(char *s, ...);
+void setStatus(char *s);
 void showMessage(char *s, ...);
 void setup();
 void mainLoop();
@@ -203,7 +205,7 @@ unsigned char map[MAPAREA] = {
   0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
-char status[MESSAGELENGTH] = "test";
+char status[MESSAGELENGTH] = "test %s";
 char message[MESSAGELENGTH];
 char *debugLog[LOGLENGTH];
 char *gameLog[LOGLENGTH];
@@ -368,6 +370,7 @@ void mainLoop() {
       showMessage("Turn: %d", turn);
 #endif
       drawStatus();
+      drawMessages();
       free(*gameLog);
       *gameLog = NULL;
       processKeys(getch());
@@ -602,18 +605,45 @@ void processKeys(short code){
   }
 }
 
+void parseStatus(char *dest, const char *src) {
+  int i, j;
+
+  for(i = 0, j = 0; i < MESSAGELENGTH && j < MESSAGELENGTH && src[i] != '\0'; i++, j++) {
+    if(src[i] == '%') {
+      if(src[++i] == '\0') return;
+      if(src[i] == 's') {
+        snprintf(dest + j, MESSAGELENGTH - j, "%d", turn);
+        break;
+      }
+      dest[j] = '%';
+      break;
+    }
+    dest[j] = src[i];
+  }
+}
+
 void drawStatus() {
+  int i, maxy;
+  char buf[MESSAGELENGTH];
+
+  parseStatus(buf, status);
+
+  maxy = getmaxy(stdscr);
+
+  for(i = 0; i < MESSAGELENGTH && buf[i] != '\0'; i++)
+    mvaddch(maxy - 1, i, buf[i]);
+
+  for(; i < MESSAGELENGTH; i++)
+    mvaddch(maxy - 1, i, ' ');
+}
+
+void drawMessages() {
   int i, j, y, maxy, maxx;
 
   getmaxyx(stdscr, maxy, maxx);
 
-  for(i = 0; i < MESSAGELENGTH && status[i] != '\0'; i++)
-    mvaddch(maxy - 1, i, status[i]);
-
-  for(; i < MESSAGELENGTH; i++)
-    mvaddch(maxy - 1, i, ' ');
-
   for(j = 0; j < LOGLENGTH && gameLog[j + 1]; j++);
+
   for(y = maxy - 2; y > maxy - 6 && gameLog[wrap(j, LOGLENGTH)]; y--, j--) {
     for(i = 0; i < maxx; i++)
       mvaddch(y, i, ' ');
@@ -638,13 +668,8 @@ void addToLog(char *s, ...) {
   va_end(args);
 }
 
-void setStatus(char *s, ...) {
-  va_list args;
-  va_start(args, s);
-
-  vsnprintf(status, MESSAGELENGTH, s, args);
-
-  va_end(args);
+void setStatus(char *s) {
+  strncpy(status, s, MESSAGELENGTH);
 }
 
 void showMessage(char *s, ...) {
