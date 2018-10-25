@@ -31,10 +31,10 @@
 #define SETBIT(B, I) (B |= (1 << 7 - I))
 #define ISVALID(X, Y) (X < MAPWIDTH && X >= 0 && Y < MAPHEIGHT && Y >= 0)
 #define ISSOLID(X, Y) (tiles[map[XYTOINDEX(X, Y)]].at & SOLID)
-#define ENABLESTATE(S) state |= (S)
-#define DISABLESTATE(S) state |= ~(S)
-#define TOGGLESTATE(S) state ^= (S)
-#define STATEENABLED(S) state & (S)
+#define ENABLESTATE(S) (state |= (S))
+#define DISABLESTATE(S) (state |= ~(S))
+#define TOGGLESTATE(S) (state ^= (S))
+#define STATEENABLED(S) (state & (S))
 #define RANDRANGE(MIN, MAX) (rand() % (MAX) - (MIN)) + (MIN)
 
 struct point {
@@ -159,7 +159,7 @@ int turn;
 
 struct key keys[] = {
   //key     mode              function          arg              cost
-  { 'q',    ALL,              quit,             { 0           }          },
+  { 'q',    ALL,              quit,             { 0           }    },
   { 'w',    GAME,             shiftPlayer,      { .p = UP     }, 1 },
   { 's',    GAME,             shiftPlayer,      { .p = DOWN   }, 1 },
   { 'a',    GAME,             shiftPlayer,      { .p = LEFT   }, 1 },
